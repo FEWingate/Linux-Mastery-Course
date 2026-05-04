@@ -51,18 +51,14 @@ body::before {
 /* ── SCREENS ── */
 .screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
 .screen.active { display: block; }
+#profileScreen { display: none; }
+#profileScreen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+#appScreen { display: none; }
+#appScreen.active { display: flex; flex-direction: column; }
 
 /* ══════════════════════════════════════
    PROFILE SELECT SCREEN
 ══════════════════════════════════════ */
-#profileScreen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  min-height: 100vh;
-}
 
 .boot-header {
   text-align: center;
@@ -310,13 +306,6 @@ body::before {
 /* ══════════════════════════════════════
    MAIN APP LAYOUT
 ══════════════════════════════════════ */
-#appScreen {
-  display: none;
-  flex-direction: column;
-  min-height: 100vh;
-}
-#appScreen.active { display: flex; }
-
 /* TOP NAV */
 .topnav {
   background: var(--bg2);
@@ -1878,16 +1867,29 @@ function loadProfile(p) {
   document.getElementById('navName').textContent = p.name;
   document.getElementById('navStreak').textContent = `🔥 ${data.streak}`;
 
-  document.getElementById('profileScreen').classList.remove('active');
-  document.getElementById('appScreen').classList.add('active');
+  // Direct style switching — bulletproof across all browsers and hosting environments
+  const ps = document.getElementById('profileScreen');
+  const as = document.getElementById('appScreen');
+  ps.classList.remove('active');
+  ps.style.display = 'none';
+  as.classList.add('active');
+  as.style.display = 'flex';
+  as.style.flexDirection = 'column';
 
   buildSidebar();
   showDashboard();
 }
 
 function goToProfiles() {
-  document.getElementById('appScreen').classList.remove('active');
-  document.getElementById('profileScreen').classList.add('active');
+  const ps = document.getElementById('profileScreen');
+  const as = document.getElementById('appScreen');
+  as.classList.remove('active');
+  as.style.display = 'none';
+  ps.classList.add('active');
+  ps.style.display = 'flex';
+  ps.style.flexDirection = 'column';
+  ps.style.alignItems = 'center';
+  ps.style.justifyContent = 'center';
   renderProfileScreen();
 }
 
@@ -4092,6 +4094,16 @@ Format inline code like \`this\` and keep explanations tight. The student values
 // INIT
 // ══════════════════════════════════════
 try {
+  // Set initial screen states directly — no reliance on CSS class cascade
+  const ps = document.getElementById('profileScreen');
+  const as = document.getElementById('appScreen');
+  as.style.display = 'none';
+  ps.style.display = 'flex';
+  ps.style.flexDirection = 'column';
+  ps.style.alignItems = 'center';
+  ps.style.justifyContent = 'center';
+  ps.style.minHeight = '100vh';
+  ps.classList.add('active');
   renderProfileScreen();
 } catch(e) {
   console.error('Linux Mastery init error:', e);
