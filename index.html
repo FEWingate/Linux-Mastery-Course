@@ -1168,74 +1168,217 @@ body::before {
 /* ══════════════════════════════════════
    CLAUDE TUTOR
 ══════════════════════════════════════ */
+/* ── LESSON TUTOR PROMPT CHIPS ── */
+.lesson-tutor-section {
+  margin: 32px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lesson-tutor-header {
+  background: var(--bg2);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-tutor-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.lesson-tutor-header-text {
+  flex: 1;
+}
+
+.lesson-tutor-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lesson-tutor-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+
+.lesson-tutor-chips {
+  background: var(--bg2);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutor-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all 0.15s;
+  text-align: left;
+  font-family: var(--font-ui);
+  gap: 10px;
+}
+
+.tutor-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(0,212,255,0.04);
+}
+
+.tutor-chip-arrow {
+  font-size: 12px;
+  color: var(--text3);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.tutor-chip:hover .tutor-chip-arrow { color: var(--accent); }
+
+.lesson-tutor-open-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lesson-tutor-open-btn:hover { background: #00b8e6; }
+
+/* ── TUTOR SLIDE PANEL ── */
 .tutor-panel {
   position: fixed;
-  right: -420px;
-  top: 56px;
-  width: 400px;
-  height: calc(100vh - 56px);
+  right: -440px;
+  top: 0;
+  width: 420px;
+  height: 100vh;
   background: var(--bg2);
   border-left: 1px solid var(--border2);
   display: flex;
   flex-direction: column;
   transition: right 0.3s ease;
-  z-index: 40;
+  z-index: 60;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.4);
 }
 
 .tutor-panel.open { right: 0; }
 
 .tutor-topbar {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  background: var(--bg3);
+}
+
+.tutor-avatar-lg {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .tutor-title {
+  flex: 1;
+}
+
+.tutor-title-main {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  font-weight: 700;
+  gap: 8px;
 }
 
-.tutor-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent3);
-  box-shadow: 0 0 8px var(--accent3);
-  animation: pulse 2s infinite;
+.tutor-connected-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent3);
+  letter-spacing: 0.5px;
 }
 
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.tutor-title-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
 
-.tutor-close {
+.tutor-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tutor-action-btn {
   background: none;
   border: none;
   color: var(--text3);
   cursor: pointer;
-  font-size: 18px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-
-.tutor-close:hover { color: var(--text); }
-
-.tutor-context {
-  padding: 10px 16px;
-  background: var(--bg3);
-  border-bottom: 1px solid var(--border);
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text3);
-  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: 5px;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
 }
 
-.tutor-context span { color: var(--accent); }
+.tutor-action-btn:hover { background: var(--bg4); color: var(--accent); }
+
+.tutor-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.tutor-close:hover { border-color: var(--accent); color: var(--text); }
+
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
 .tutor-messages {
   flex: 1;
@@ -1254,7 +1397,7 @@ body::before {
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.7;
-  max-width: 90%;
+  max-width: 92%;
 }
 
 .tutor-msg.claude {
@@ -1285,24 +1428,26 @@ body::before {
   color: var(--text3);
   font-family: var(--font-mono);
   font-size: 12px;
+  align-self: flex-start;
 }
 
 .tutor-input-area {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-top: 1px solid var(--border);
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  background: var(--bg3);
 }
 
 .tutor-input {
   flex: 1;
-  background: var(--bg3);
+  background: var(--bg);
   border: 1px solid var(--border2);
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 13px;
   outline: none;
   resize: none;
@@ -1312,6 +1457,7 @@ body::before {
 }
 
 .tutor-input:focus { border-color: var(--accent); }
+.tutor-input::placeholder { color: var(--text3); }
 
 .tutor-send {
   padding: 10px 14px;
@@ -1324,32 +1470,15 @@ body::before {
   font-size: 16px;
   transition: all 0.15s;
   align-self: flex-end;
-}
-
-.tutor-send:hover { background: #00b8e6; }
-.tutor-send:disabled { opacity: 0.4; cursor: default; }
-
-.tutor-toggle {
-  position: fixed;
-  right: 20px;
-  bottom: 24px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,212,255,0.4);
-  z-index: 41;
-  transition: all 0.2s;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.tutor-toggle:hover { transform: scale(1.1); }
+.tutor-send:hover { background: #00b8e6; }
+.tutor-send:disabled { opacity: 0.4; cursor: default; }
 
 /* ══════════════════════════════════════
    PROGRESS TAB
@@ -1549,10 +1678,10 @@ body::before {
   <nav class="topnav">
     <div class="nav-logo">linux<span>mastery</span></div>
     <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="nav-tab" onclick="switchTab('learn')">Learn</button>
-      <button class="nav-tab" onclick="switchTab('progress')">Progress</button>
-      <button class="nav-tab" onclick="switchTab('reference')">Commands</button>
+      <button class="nav-tab active" onclick="switchTab('dashboard', this)">Dashboard</button>
+      <button class="nav-tab" onclick="switchTab('learn', this)">Learn</button>
+      <button class="nav-tab" onclick="switchTab('progress', this)">Progress</button>
+      <button class="nav-tab" onclick="switchTab('reference', this)">Commands</button>
     </div>
     <div class="nav-right">
       <div class="nav-streak" id="navStreak">🔥 0</div>
@@ -1578,27 +1707,50 @@ body::before {
   </div>
 </div>
 
+<!-- API KEY MODAL -->
+<div class="profile-modal" id="apiKeyModal">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--accent)">Claude Tutor Setup</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+      The Claude Tutor requires your Anthropic API key. Your key is stored only in your browser's local storage — it never leaves your device.
+    </p>
+    <div class="modal-field">
+      <label class="modal-label">ANTHROPIC API KEY</label>
+      <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-...">
+    </div>
+    <p style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:-8px;margin-bottom:20px">
+      Get your key at console.anthropic.com → API Keys
+    </p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeApiKeyModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Save & Open Tutor</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLAUDE TUTOR PANEL -->
 <div class="tutor-panel" id="tutorPanel">
   <div class="tutor-topbar">
+    <div class="tutor-avatar-lg">🤖</div>
     <div class="tutor-title">
-      <div class="tutor-dot"></div>
-      Claude Tutor
+      <div class="tutor-title-main">
+        Ask Claude — Your Linux Tutor
+        <span class="tutor-connected-badge" id="tutorConnectedBadge"></span>
+      </div>
+      <div class="tutor-title-sub" id="tutorContextLabel">General Linux Help</div>
     </div>
-    <button class="tutor-close" onclick="toggleTutor()">✕</button>
-  </div>
-  <div class="tutor-context" id="tutorContext">
-    Context: <span id="tutorContextLabel">General Linux Help</span>
+    <div class="tutor-topbar-actions">
+      <button class="tutor-action-btn" onclick="openApiKeyModal()">Change key</button>
+      <button class="tutor-close" onclick="toggleTutor()">✕</button>
+    </div>
   </div>
   <div class="tutor-messages" id="tutorMessages"></div>
   <div class="tutor-input-area">
-    <textarea class="tutor-input" id="tutorInput" placeholder="Ask anything about Linux..." rows="1"
+    <textarea class="tutor-input" id="tutorInput" placeholder="Ask a follow-up question..." rows="1"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTutorMessage();}"></textarea>
     <button class="tutor-send" id="tutorSendBtn" onclick="sendTutorMessage()">↑</button>
   </div>
 </div>
-
-<button class="tutor-toggle" onclick="toggleTutor()" title="Ask Claude Tutor">🤖</button>
 
 <script>
 // ══════════════════════════════════════
@@ -1978,9 +2130,9 @@ function isModuleUnlocked(modId) {
 // ══════════════════════════════════════
 // TAB NAVIGATION
 // ══════════════════════════════════════
-function switchTab(tab) {
+function switchTab(tab, el) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  if (el) el.classList.add('active');
   if (tab === 'dashboard') showDashboard();
   else if (tab === 'learn') showLearnTab();
   else if (tab === 'progress') showProgress();
@@ -3297,8 +3449,90 @@ const QUIZZES = {
 };
 
 // ══════════════════════════════════════
-// RENDER LESSON
+// LESSON PROMPT CHIPS PER MODULE
 // ══════════════════════════════════════
+const LESSON_CHIPS = {
+  nav: [
+    "Can you quiz me on the Linux filesystem directories?",
+    "Explain the difference between /etc and /var in more detail.",
+    "Give me a real EC2 scenario where I'd use tail -f.",
+    "What happens if I run pwd on a fresh EC2 instance?",
+    "Can you show me more examples of absolute vs relative paths?"
+  ],
+  files: [
+    "Walk me through a real deployment using chown and chmod.",
+    "What's the safest way to delete files on a production server?",
+    "Can you quiz me on octal permission numbers?",
+    "Explain why .ssh needs 700 permissions or SSH breaks.",
+    "Give me a scenario where I'd use cp before editing a config file."
+  ],
+  users: [
+    "How do user accounts work differently on EC2 vs my local machine?",
+    "Explain sudo vs su — when would I use each?",
+    "What's the /etc/sudoers file and why is it dangerous to edit wrong?",
+    "Quiz me on Linux users and groups.",
+    "What's the ubuntu user on an EC2 instance and why does it exist?"
+  ],
+  text: [
+    "What's the fastest way to edit a file on a server with no GUI?",
+    "Walk me through vim modes — I keep getting stuck.",
+    "How do I search and replace text in a file from the terminal?",
+    "Quiz me on nano keyboard shortcuts.",
+    "When would I use grep vs opening a file in less?"
+  ],
+  processes: [
+    "How do I find which process is eating all my CPU on EC2?",
+    "Explain the difference between kill and kill -9.",
+    "Quiz me on process management commands.",
+    "How do background jobs work and when would I use them?",
+    "What does the load average in top actually mean?"
+  ],
+  networking: [
+    "Explain subnets in plain English — I keep getting confused.",
+    "How do ports work and why does it matter for cloud security groups?",
+    "Quiz me on basic networking commands.",
+    "What's the difference between curl and wget?",
+    "How would I use netstat to debug a connection issue on EC2?"
+  ],
+  scripting: [
+    "Help me understand when to use a for loop vs while loop.",
+    "Can you write a simple deployment script as an example?",
+    "Quiz me on bash scripting syntax.",
+    "How do cron jobs work and how do I set one up?",
+    "What are exit codes and why do they matter in scripts?"
+  ],
+  packages: [
+    "What's the difference between apt update and apt upgrade?",
+    "How do I find out what version of a package is installed?",
+    "Quiz me on apt commands.",
+    "Why do some packages need sudo and others don't?",
+    "What happens under the hood when I run apt install?"
+  ],
+  ssh: [
+    "Walk me through generating SSH keys and connecting to EC2 step by step.",
+    "What's the difference between SCP and rsync?",
+    "Quiz me on SSH concepts.",
+    "How do SSH config files work and how do I set one up?",
+    "Why does SSH use key pairs instead of passwords?"
+  ],
+  cloud: [
+    "How is WSL2 different from a real Linux server?",
+    "Walk me through setting up AWS CLI from scratch.",
+    "Quiz me on AWS CLI commands.",
+    "What environment variables does AWS CLI need to work?",
+    "How is SSHing into EC2 different from SSHing into a local machine?"
+  ]
+};
+
+function getLessonChips(modId) {
+  return LESSON_CHIPS[modId] || [
+    "Can you explain this concept in more detail?",
+    "Give me a real-world cloud engineering example.",
+    "Quiz me on what I just learned.",
+    "How does this apply to AWS EC2?",
+    "What are the most common mistakes with this?"
+  ];
+}
 let currentModuleId = null;
 let currentLessonId = null;
 
@@ -3327,6 +3561,8 @@ function loadLesson(modId, lessonId) {
   const prevLesson = lessonIdx > 0 ? mod.lessons[lessonIdx - 1] : null;
   const nextLesson = lessonIdx < mod.lessons.length - 1 ? mod.lessons[lessonIdx + 1] : null;
 
+  const chips = getLessonChips(modId);
+
   document.getElementById('mainContent').innerHTML = `
     <div class="lesson-header">
       <div class="lesson-breadcrumb">MODULE ${mod.num} / <span>${mod.title}</span></div>
@@ -3341,7 +3577,28 @@ function loadLesson(modId, lessonId) {
       ${lessonData ? lessonData.content : '<p>Lesson content coming soon.</p>'}
     </div>
 
-    <div class="lesson-nav">
+    <div class="lesson-tutor-section">
+      <div class="lesson-tutor-header">
+        <div class="lesson-tutor-avatar">🤖</div>
+        <div class="lesson-tutor-header-text">
+          <div class="lesson-tutor-title">Still have questions? Ask Claude</div>
+          <div class="lesson-tutor-sub">Tap a question for an instant explanation without leaving this page</div>
+        </div>
+      </div>
+      <div class="lesson-tutor-chips">
+        ${chips.map(chip => `
+          <button class="tutor-chip" onclick="sendChipQuestion(\`${chip.replace(/`/g, "'")}\`)">
+            <span>${chip}</span>
+            <span class="tutor-chip-arrow">Ask →</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="lesson-tutor-open-btn" onclick="toggleTutor()">
+        Open Tutor Chat →
+      </button>
+    </div>
+
+    <div class="lesson-nav" style="margin-top:24px">
       <button class="lesson-nav-btn" ${!prevLesson ? 'disabled' : ''} onclick="loadLesson('${modId}','${prevLesson ? prevLesson.id : ''}')">← Previous</button>
       <button class="lesson-nav-btn primary" onclick="markDoneAndNext('${modId}','${lessonId}')">
         ${nextLesson ? 'Mark Complete & Next →' : 'Mark Complete ✓'}
@@ -3666,17 +3923,85 @@ function filterCmdRef(query) {
 }
 
 // ══════════════════════════════════════
+// API KEY MANAGEMENT
+// ══════════════════════════════════════
+function getApiKey() {
+  return localStorage.getItem('lm_api_key') || '';
+}
+
+function openApiKeyModal() {
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiKeyModal').classList.add('open');
+}
+
+function closeApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.remove('open');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { alert('Please enter your API key.'); return; }
+  localStorage.setItem('lm_api_key', key);
+  closeApiKeyModal();
+  // Check for a pending chip question
+  const pending = localStorage.getItem('lm_pending_chip');
+  if (pending) {
+    localStorage.removeItem('lm_pending_chip');
+    sendChipQuestion(pending);
+  } else {
+    openTutor();
+  }
+}
+
+// ══════════════════════════════════════
 // CLAUDE TUTOR
 // ══════════════════════════════════════
 let tutorHistory = [];
 
 function toggleTutor() {
   const panel = document.getElementById('tutorPanel');
-  panel.classList.toggle('open');
-
-  if (panel.classList.contains('open') && tutorHistory.length === 0) {
-    addTutorMsg('claude', `Hey ${currentProfile ? currentProfile.name : 'there'}! I'm your Linux tutor. Ask me anything about the commands, concepts, or how they apply to cloud engineering. I'm here to help you go deeper on whatever you're learning. 🐧`);
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    return;
   }
+  // Check for API key first
+  if (!getApiKey()) {
+    openApiKeyModal();
+    return;
+  }
+  openTutor();
+}
+
+function openTutor() {
+  const panel = document.getElementById('tutorPanel');
+  panel.classList.add('open');
+  // Show connected badge
+  const badge = document.getElementById('tutorConnectedBadge');
+  if (badge) badge.textContent = getApiKey() ? '✓ Tutor AI connected' : '';
+  if (tutorHistory.length === 0) {
+    addTutorMsg('claude', `Hey ${currentProfile ? currentProfile.name : 'there'}! I'm your Linux tutor. Ask me anything about the commands, concepts, or how they apply to cloud engineering. 🐧`);
+  }
+}
+
+function sendChipQuestion(question) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    // Store pending question, open API key modal
+    localStorage.setItem('lm_pending_chip', question);
+    openApiKeyModal();
+    return;
+  }
+  // Open tutor panel and send the question
+  const panel = document.getElementById('tutorPanel');
+  panel.classList.add('open');
+  const badge = document.getElementById('tutorConnectedBadge');
+  if (badge) badge.textContent = '✓ Tutor AI connected';
+  if (tutorHistory.length === 0) {
+    addTutorMsg('claude', `Hey ${currentProfile ? currentProfile.name : 'there'}! I'm your Linux tutor. Ask me anything about Linux and cloud engineering. 🐧`);
+  }
+  // Inject the chip question as if user typed it
+  document.getElementById('tutorInput').value = question;
+  sendTutorMessage();
 }
 
 function addTutorMsg(role, text) {
@@ -3693,6 +4018,12 @@ async function sendTutorMessage() {
   const input = document.getElementById('tutorInput');
   const msg = input.value.trim();
   if (!msg) return;
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    openApiKeyModal();
+    return;
+  }
 
   input.value = '';
   document.getElementById('tutorSendBtn').disabled = true;
@@ -3725,6 +4056,8 @@ Format inline code like \`this\` and keep explanations tight. The student values
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
@@ -3738,16 +4071,18 @@ Format inline code like \`this\` and keep explanations tight. The student values
     const data = await response.json();
     document.getElementById('tutorLoading')?.remove();
 
-    const text = data.content?.[0]?.text || 'Sorry, something went wrong. Try again.';
-    // Format code blocks
-    const formatted = text
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
-
-    addTutorMsg('claude', formatted);
+    if (data.error) {
+      addTutorMsg('claude', `API error: ${data.error.message}. Click "API Key" above to update your key.`);
+    } else {
+      const text = data.content?.[0]?.text || 'Sorry, something went wrong. Try again.';
+      const formatted = text
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+      addTutorMsg('claude', formatted);
+    }
   } catch (err) {
     document.getElementById('tutorLoading')?.remove();
-    addTutorMsg('claude', 'Connection error. Make sure you\'re online and try again.');
+    addTutorMsg('claude', 'Connection error. Check your API key or internet connection and try again.');
   }
 
   document.getElementById('tutorSendBtn').disabled = false;
@@ -3756,7 +4091,12 @@ Format inline code like \`this\` and keep explanations tight. The student values
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
-renderProfileScreen();
+try {
+  renderProfileScreen();
+} catch(e) {
+  console.error('Linux Mastery init error:', e);
+  document.body.innerHTML = '<div style="color:#00d4ff;font-family:monospace;padding:40px;font-size:14px">Load error: ' + e.message + '<br><br>Please hard refresh (Ctrl+Shift+R)</div>';
+}
 </script>
 </body>
 </html>
