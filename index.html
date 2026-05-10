@@ -2540,14 +2540,7 @@ function toggleSidebarModule(modId) {
 }
 
 function isModuleUnlocked(modId) {
-  const data = getProfileData(currentProfile.name);
-  const mod = MODULES.find(m => m.id === modId);
-  if (mod.unlocked) return true;
-  const idx = MODULES.indexOf(mod);
-  if (idx === 0) return true;
-  const prev = MODULES[idx - 1];
-  const prevQuiz = prev.lessons.find(l => l.isQuiz);
-  return prevQuiz && data.lessonsCompleted[prevQuiz.id];
+  return true; // All modules unlocked
 }
 
 // ══════════════════════════════════════
@@ -4630,7 +4623,914 @@ text_5: {
   `
 },
 
-text_quiz: { isQuiz: true, moduleId: 'text' }
+text_quiz: { isQuiz: true, moduleId: 'text' },
+
+// ── MODULE 5: PROCESSES & MONITORING ──
+
+proc_1: {
+  title: 'What Is a Process?',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your EC2 instance is running slow. Something is eating resources. What's actually happening under the hood?</div>
+  <div class="scenario-body">Every time you run a command, start a web server, or execute a script, Linux creates a process. Understanding processes is how you diagnose slow servers, kill runaway programs, and keep cloud infrastructure healthy.</div>
+</div>
+
+<h3>What Is a Process?</h3>
+<p>A <strong>process</strong> is any running program. Every command you type, every service running on your server — nginx, MySQL, your Python app — is a process. Linux assigns each one a unique <strong>PID (Process ID)</strong> number and tracks it independently.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">processes in action</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Every command you run becomes a process</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sleep 60 &</span><br>
+    <span class="t-out">[1] 4821</span><br>
+    <span class="t-comment"># That number (4821) is the PID — Process ID</span><br>
+    <br>
+    <span class="t-comment"># The & at the end runs it in the background</span><br>
+    <span class="t-comment"># Your terminal stays usable while it runs</span>
+  </div>
+</div>
+
+<h3>Process Relationships</h3>
+<p>Processes have a family tree. When a process creates another process, the creator is the <strong>parent</strong> and the new one is the <strong>child</strong>. The very first process on any Linux system is <strong>systemd</strong> (PID 1) — every other process is a descendant of it.</p>
+
+<table class="cmd-table">
+  <tr><th>Term</th><th>Meaning</th><th>Example</th></tr>
+  <tr><td><code>PID</code></td><td class="cmd-desc">Process ID — unique number assigned to every process</td><td class="cmd-desc">nginx worker: PID 3421</td></tr>
+  <tr><td><code>PPID</code></td><td class="cmd-desc">Parent Process ID — who spawned this process</td><td class="cmd-desc">nginx master spawned the worker</td></tr>
+  <tr><td><code>UID</code></td><td class="cmd-desc">User ID of who owns/runs the process</td><td class="cmd-desc">nginx runs as www-data (UID 33)</td></tr>
+  <tr><td><code>systemd</code></td><td class="cmd-desc">PID 1 — the mother of all processes</td><td class="cmd-desc">Started at boot, never stops</td></tr>
+</table>
+
+<h3>Process States</h3>
+<p>Every process is in one of these states at any given moment:</p>
+
+<table class="cmd-table">
+  <tr><th>State</th><th>Symbol</th><th>What It Means</th></tr>
+  <tr><td><code>Running</code></td><td class="cmd-desc">R</td><td class="cmd-desc">Actively using CPU right now</td></tr>
+  <tr><td><code>Sleeping</code></td><td class="cmd-desc">S</td><td class="cmd-desc">Waiting for something (I/O, timer) — most processes are here</td></tr>
+  <tr><td><code>Stopped</code></td><td class="cmd-desc">T</td><td class="cmd-desc">Paused (Ctrl+Z)</td></tr>
+  <tr><td><code>Zombie</code></td><td class="cmd-desc">Z</td><td class="cmd-desc">Finished but parent hasn't acknowledged it yet — usually harmless</td></tr>
+</table>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ Cloud Engineering Context</div>
+  On an EC2 instance, you'll commonly see processes for: <strong>sshd</strong> (handles your SSH connection), <strong>nginx</strong> or <strong>apache2</strong> (web server), <strong>mysqld</strong> or <strong>postgres</strong> (database), your <strong>app server</strong> (node, python, java), and <strong>cron</strong> (scheduled jobs). Knowing how to find and manage these is core to your job.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Run <code>sleep 60 &</code> — starts a background process, note the PID printed</li>
+    <li>Run <code>sleep 120 &</code> again — now you have two background processes</li>
+    <li>Run <code>echo $$</code> — prints the PID of your current shell session</li>
+    <li>Run <code>echo $PPID</code> — prints the parent PID (who launched your shell)</li>
+    <li>In the next lesson you'll learn to see all these processes — keep the terminal open</li>
+  </ul>
+</div>
+  `
+},
+
+proc_2: {
+  title: 'ps and top: Viewing Processes',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Something is maxing out CPU on your server. You need to find it in the next 30 seconds.</div>
+  <div class="scenario-body">ps and top are your eyes into what's running on a Linux system. Every cloud engineer uses these constantly. They're the first tools you reach for when a server is behaving unexpectedly.</div>
+</div>
+
+<h3>ps — Process Snapshot</h3>
+<p><code>ps</code> takes a snapshot of current processes. The output is static — it shows what's running at the moment you run it.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ps usage</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Show your own processes</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ps</span><br>
+    <span class="t-out">  PID TTY          TIME CMD</span><br>
+    <span class="t-out"> 1234 pts/0    00:00:00 bash</span><br>
+    <span class="t-out"> 4821 pts/0    00:00:00 sleep</span><br>
+    <br>
+    <span class="t-comment"># Show ALL processes from ALL users (most useful)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ps aux</span><br>
+    <span class="t-out">USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</span><br>
+    <span class="t-out">root         1  0.0  0.1 168940 11340 ?        Ss   Apr20   0:04 /sbin/init</span><br>
+    <span class="t-out">www-data  3421  0.2  1.2 345600 98304 ?        S    10:22   0:12 nginx: worker</span><br>
+    <span class="t-out">frank     4821  0.0  0.0   5476   532 pts/0    S    14:30   0:00 sleep 60</span><br>
+    <br>
+    <span class="t-comment"># Find a specific process by name</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ps aux | grep nginx</span><br>
+    <span class="t-comment"># Pipe ps output into grep — extremely common pattern</span>
+  </div>
+</div>
+
+<h4>Reading ps aux Output</h4>
+<table class="cmd-table">
+  <tr><th>Column</th><th>Meaning</th></tr>
+  <tr><td><code>USER</code></td><td class="cmd-desc">Who owns the process</td></tr>
+  <tr><td><code>PID</code></td><td class="cmd-desc">Process ID</td></tr>
+  <tr><td><code>%CPU</code></td><td class="cmd-desc">CPU usage percentage</td></tr>
+  <tr><td><code>%MEM</code></td><td class="cmd-desc">Memory usage percentage</td></tr>
+  <tr><td><code>STAT</code></td><td class="cmd-desc">Process state (S=sleeping, R=running, Z=zombie)</td></tr>
+  <tr><td><code>COMMAND</code></td><td class="cmd-desc">The actual command that started the process</td></tr>
+</table>
+
+<h3>top — Live Process Monitor</h3>
+<p><code>top</code> is a live, updating view of all processes sorted by CPU usage. It refreshes every few seconds — perfect for watching a runaway process in real time.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">top — live view</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">top</span><br>
+    <br>
+    <span class="t-out">top - 14:35:02 up 2 days,  3:22,  1 user,  load average: 0.12, 0.08, 0.05</span><br>
+    <span class="t-out">Tasks: 142 total,   1 running, 141 sleeping,   0 stopped,   0 zombie</span><br>
+    <span class="t-out">%Cpu(s):  2.3 us,  0.5 sy,  0.0 ni, 96.8 id,  0.4 wa</span><br>
+    <span class="t-out">MiB Mem :   7854.3 total,   2341.2 free,   3821.4 used</span><br>
+    <br>
+    <span class="t-out">  PID USER      PR  NI    VIRT    RES %CPU %MEM  COMMAND</span><br>
+    <span class="t-out"> 3421 www-data  20   0  345600  98304  8.2  1.2  nginx</span><br>
+    <span class="t-out"> 1892 mysql     20   0 1.2g    512m   3.1  6.5  mysqld</span><br>
+    <br>
+    <span class="t-comment"># Inside top — keyboard shortcuts:</span><br>
+    <span class="t-warn">q</span>          <span class="t-comment">← quit</span><br>
+    <span class="t-warn">k</span>          <span class="t-comment">← kill a process (enter PID when prompted)</span><br>
+    <span class="t-warn">M</span>          <span class="t-comment">← sort by memory usage</span><br>
+    <span class="t-warn">P</span>          <span class="t-comment">← sort by CPU usage (default)</span><br>
+    <span class="t-warn">1</span>          <span class="t-comment">← show per-CPU stats (useful on multi-core servers)</span>
+  </div>
+</div>
+
+<h4>htop — top's Better-Looking Cousin</h4>
+<p><code>htop</code> is an improved version of top with color, mouse support, and easier controls. Not installed by default but worth having:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">installing and using htop</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt install htop -y</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">htop</span><br>
+    <span class="t-comment"># Color-coded bars, F-key shortcuts at bottom, mouse clickable</span><br>
+    <span class="t-comment"># F10 or q to quit</span>
+  </div>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ps aux</code> — see every process running on your system right now</li>
+    <li><code>ps aux | grep sleep</code> — find the sleep processes from last lesson</li>
+    <li><code>top</code> — watch the live view, press M to sort by memory, then q to quit</li>
+    <li><code>sudo apt install htop -y</code> then <code>htop</code> — see the difference, F10 to quit</li>
+    <li><code>ps aux | grep bash</code> — find your own shell process and note its PID</li>
+  </ul>
+</div>
+  `
+},
+
+proc_3: {
+  title: 'Killing Processes',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">A script went rogue and is eating 100% CPU. Your server is crawling. You need to stop it — now.</div>
+  <div class="scenario-body">Killing processes is a routine part of cloud server management. Frozen apps, runaway scripts, memory leaks — you need to know how to stop them cleanly and forcefully. There's a right way and a nuclear way.</div>
+</div>
+
+<h3>kill — Send a Signal to a Process</h3>
+<p><code>kill</code> doesn't just kill processes — it sends <strong>signals</strong>. Different signals tell the process to do different things. You need to know two:</p>
+
+<table class="cmd-table">
+  <tr><th>Signal</th><th>Number</th><th>What It Does</th><th>When to Use</th></tr>
+  <tr><td><code>SIGTERM</code></td><td class="cmd-desc">15 (default)</td><td class="cmd-desc">Politely asks process to stop — gives it time to clean up</td><td class="cmd-desc">Always try this first</td></tr>
+  <tr><td><code>SIGKILL</code></td><td class="cmd-desc">9</td><td class="cmd-desc">Immediately destroys the process — no cleanup, no warning</td><td class="cmd-desc">When SIGTERM doesn't work</td></tr>
+</table>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">killing processes</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Step 1: Find the PID</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ps aux | grep sleep</span><br>
+    <span class="t-out">frank     4821  0.0  0.0   5476   532 pts/0    S    14:30   0:00 sleep 60</span><br>
+    <br>
+    <span class="t-comment"># Step 2: Kill it politely (SIGTERM = signal 15, the default)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">kill 4821</span><br>
+    <span class="t-out">[1]+  Terminated              sleep 60</span><br>
+    <br>
+    <span class="t-comment"># If it doesn't stop — use SIGKILL (signal 9)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">kill -9 4821</span><br>
+    <span class="t-out">[1]+  Killed                  sleep 60</span><br>
+    <br>
+    <span class="t-comment"># Kill by process name instead of PID</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">pkill sleep</span><br>
+    <span class="t-comment"># Kills ALL processes named "sleep"</span><br>
+    <br>
+    <span class="t-comment"># Kill ALL instances of a program</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">killall sleep</span>
+  </div>
+</div>
+
+<h3>pgrep — Find PIDs by Name</h3>
+<p><code>pgrep</code> returns the PID of a running process by name — cleaner than piping ps into grep:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">pgrep examples</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">pgrep nginx</span><br>
+    <span class="t-out">3421</span><br>
+    <span class="t-out">3422</span><br>
+    <span class="t-comment"># Returns all nginx PIDs</span><br>
+    <br>
+    <span class="t-comment"># Kill directly using pgrep output</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">kill $(pgrep sleep)</span><br>
+    <span class="t-comment"># $() runs pgrep and passes its output as the argument to kill</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--yellow)">
+  <div class="info-box-title">⚠️ kill -9 Caveats</div>
+  SIGKILL is immediate and cannot be caught or ignored by the process. This means the process has no chance to close files, release database connections, or finish writing data. Use it only when the process won't respond to a regular kill. On a database process, SIGKILL can corrupt data — always try SIGTERM first and give it a few seconds.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Start two background processes: <code>sleep 200 & sleep 300 &</code></li>
+    <li>Find them: <code>pgrep sleep</code> — note both PIDs</li>
+    <li>Kill one politely: <code>kill [PID]</code> — use the first PID</li>
+    <li>Kill the other forcefully: <code>kill -9 [PID]</code></li>
+    <li>Verify they're gone: <code>pgrep sleep</code> — should return nothing</li>
+    <li>Try <code>pkill sleep</code> after starting a few more — kills all at once</li>
+  </ul>
+</div>
+  `
+},
+
+proc_4: {
+  title: 'Background Jobs & fg/bg',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You're running a long database backup on a server. You don't want to wait — you need to keep working.</div>
+  <div class="scenario-body">Linux job control lets you run multiple tasks in one terminal session — pause a running process, send it to the background, bring it back, and manage everything from a single shell. This is how you multitask on a server without opening multiple SSH sessions.</div>
+</div>
+
+<h3>Foreground vs Background</h3>
+<p>A <strong>foreground</strong> process takes control of your terminal — you can't type anything else until it finishes. A <strong>background</strong> process runs silently while your terminal stays free.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">job control</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Start a process in the background with &</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sleep 300 &</span><br>
+    <span class="t-out">[1] 5123</span><br>
+    <span class="t-comment"># [1] = job number, 5123 = PID</span><br>
+    <br>
+    <span class="t-comment"># List all background jobs</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">jobs</span><br>
+    <span class="t-out">[1]+  Running    sleep 300 &</span><br>
+    <br>
+    <span class="t-comment"># Bring job back to foreground</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">fg 1</span><br>
+    <span class="t-out">sleep 300</span><br>
+    <span class="t-comment"># Now it's running in foreground — terminal is blocked</span><br>
+    <br>
+    <span class="t-comment"># Pause it with Ctrl+Z</span><br>
+    <span class="t-warn">^Z</span><br>
+    <span class="t-out">[1]+  Stopped    sleep 300</span><br>
+    <br>
+    <span class="t-comment"># Send the stopped process back to background</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">bg 1</span><br>
+    <span class="t-out">[1]+ sleep 300 &</span><br>
+    <span class="t-comment"># Now it's running in background again</span>
+  </div>
+</div>
+
+<h3>nohup — Keep Running After You Log Out</h3>
+<p>Background jobs die when you close your SSH session. <code>nohup</code> keeps a process running even after you disconnect — essential for long-running tasks on servers.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">nohup — survives logout</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Run a script that keeps going even after SSH disconnect</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nohup python3 backup.py &</span><br>
+    <span class="t-out">nohup: ignoring input and appending output to 'nohup.out'</span><br>
+    <span class="t-comment"># Output goes to nohup.out — check it with tail -f nohup.out</span><br>
+    <br>
+    <span class="t-comment"># Even better: redirect output to your own log file</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nohup python3 backup.py > backup.log 2>&1 &</span><br>
+    <span class="t-comment"># 2>&1 sends error output to the same log file</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 Ctrl+Z vs Ctrl+C</div>
+  <strong>Ctrl+Z</strong> — pauses (suspends) the process. It's still alive, just stopped. Resume with fg or bg.<br><br>
+  <strong>Ctrl+C</strong> — terminates the process completely. It's gone. No resume.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Run <code>sleep 500 &</code> then <code>sleep 600 &</code> — two background jobs</li>
+    <li>Run <code>jobs</code> — see both listed with job numbers</li>
+    <li>Run <code>fg 1</code> — bring job 1 to foreground (terminal blocks)</li>
+    <li>Press <code>Ctrl+Z</code> — pause it and return to prompt</li>
+    <li>Run <code>bg 1</code> — send it back to background</li>
+    <li>Run <code>jobs</code> again — confirm both are still running</li>
+    <li>Run <code>kill %1 %2</code> to kill both jobs by job number</li>
+  </ul>
+</div>
+  `
+},
+
+proc_5: {
+  title: 'Disk & Memory: df, du, free',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your server stops accepting uploads. The error: "No space left on device." How do you find what's eating your disk?</div>
+  <div class="scenario-body">Running out of disk or memory is one of the most common production issues on cloud servers. Knowing how to check usage, find the culprit, and free up space is a must-have skill. These three commands are your toolkit.</div>
+</div>
+
+<h3>df — Disk Free (Overall Usage)</h3>
+<p><code>df</code> shows how much disk space is used and available on each mounted filesystem. Think of it as the top-level view.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">df — disk space overview</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">df -h</span><br>
+    <span class="t-out">Filesystem      Size  Used Avail Use% Mounted on</span><br>
+    <span class="t-out">/dev/xvda1       20G   14G  5.1G  74% /</span><br>
+    <span class="t-out">tmpfs           3.9G     0  3.9G   0% /dev/shm</span><br>
+    <span class="t-out">/dev/xvdf1       50G   48G  1.4G  97% /data</span><br>
+    <span class="t-warn"># /data is at 97% — that's your problem</span><br>
+    <br>
+    <span class="t-comment"># -h = human readable (GB, MB instead of blocks)</span><br>
+    <span class="t-comment"># Use% over 85% means you should investigate</span><br>
+    <span class="t-comment"># Use% at 100% means things will start failing</span>
+  </div>
+</div>
+
+<h3>du — Disk Usage (Find the Culprit)</h3>
+<p><code>du</code> shows how much space specific directories and files are using. Once df tells you a filesystem is full, du tells you what's taking the space.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">du — find what's eating disk</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># See top-level directory sizes (human readable)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">du -h --max-depth=1 /var</span><br>
+    <span class="t-out">4.0K  /var/backups</span><br>
+    <span class="t-out">12G   /var/log</span><br>
+    <span class="t-out">2.1G  /var/lib</span><br>
+    <span class="t-out">14G   /var</span><br>
+    <span class="t-warn"># /var/log is 12GB — logs are your problem</span><br>
+    <br>
+    <span class="t-comment"># Find the biggest files/dirs in a location, sorted</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">du -h /var/log | sort -rh | head -10</span><br>
+    <span class="t-comment"># sort -rh = reverse sort by human-readable size</span><br>
+    <span class="t-comment"># head -10 = show only the top 10 biggest</span><br>
+    <br>
+    <span class="t-comment"># Check size of a specific directory</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">du -sh /var/log/nginx/</span><br>
+    <span class="t-out">8.2G  /var/log/nginx/</span>
+  </div>
+</div>
+
+<h3>free — Memory Usage</h3>
+<p><code>free</code> shows RAM and swap usage. Critical for diagnosing slow servers — if memory is full, the system starts using swap (disk) which makes everything crawl.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">free — memory check</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">free -h</span><br>
+    <span class="t-out">              total        used        free      shared  buff/cache   available</span><br>
+    <span class="t-out">Mem:           7.7G        4.2G        512M        234M        3.0G        3.1G</span><br>
+    <span class="t-out">Swap:          2.0G        1.8G        200M</span><br>
+    <span class="t-warn"># Swap is 90% used — server is memory-starved and struggling</span><br>
+    <br>
+    <span class="t-comment"># The "available" column is what matters — not "free"</span><br>
+    <span class="t-comment"># available = free + reclaimable cache — true usable memory</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ The Full Disk Diagnosis Workflow</div>
+  1. <code>df -h</code> — which filesystem is full?<br>
+  2. <code>du -h --max-depth=1 /that/path</code> — which subdirectory is biggest?<br>
+  3. Drill down until you find the culprit<br>
+  4. Common causes: old log files in /var/log, leftover Docker images, database dumps, old package caches<br>
+  5. Clean up: <code>sudo apt autoremove</code> clears old packages, <code>sudo journalctl --vacuum-size=500M</code> trims system logs
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>df -h</code> — see disk usage on your WSL2 system</li>
+    <li><code>du -h --max-depth=1 /var</code> — see what's taking space in /var</li>
+    <li><code>du -sh ~</code> — how big is your home directory?</li>
+    <li><code>du -h ~ | sort -rh | head -10</code> — find the 10 biggest things in your home dir</li>
+    <li><code>free -h</code> — check your memory. Note the "available" column.</li>
+  </ul>
+</div>
+  `
+},
+
+proc_quiz: { isQuiz: true, moduleId: 'proc' },
+
+// ── MODULE 6: NETWORKING FUNDAMENTALS ──
+
+net_1: {
+  title: 'IP Addresses & Subnets',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You're setting up a VPC on AWS. You need to assign IP ranges to subnets. What does any of this actually mean?</div>
+  <div class="scenario-body">Networking is the backbone of cloud engineering. Every EC2 instance, every load balancer, every database — they all communicate through IP addresses and subnets. You don't need to be a network engineer, but you need to understand the fundamentals to work in AWS.</div>
+</div>
+
+<h3>IP Addresses</h3>
+<p>An <strong>IP address</strong> is a unique identifier for a device on a network. Think of it like a mailing address — every machine needs one to send and receive data. There are two types you'll work with:</p>
+
+<table class="cmd-table">
+  <tr><th>Type</th><th>Example</th><th>What It Is</th></tr>
+  <tr><td><code>IPv4</code></td><td class="cmd-desc">192.168.1.100</td><td class="cmd-desc">4 numbers (0-255) separated by dots. The standard you'll use daily.</td></tr>
+  <tr><td><code>IPv6</code></td><td class="cmd-desc">2001:0db8::1</td><td class="cmd-desc">Newer, longer format. AWS supports it but IPv4 is still dominant.</td></tr>
+  <tr><td><code>Private</code></td><td class="cmd-desc">10.0.0.x, 192.168.x.x, 172.16.x.x</td><td class="cmd-desc">Internal network only — not routable on the internet</td></tr>
+  <tr><td><code>Public</code></td><td class="cmd-desc">54.201.88.42</td><td class="cmd-desc">Reachable from anywhere on the internet — your EC2's public IP</td></tr>
+  <tr><td><code>Loopback</code></td><td class="cmd-desc">127.0.0.1</td><td class="cmd-desc">Always refers to this machine itself — "localhost"</td></tr>
+</table>
+
+<h3>Subnets & CIDR Notation</h3>
+<p>A <strong>subnet</strong> is a range of IP addresses. In AWS VPC, you divide your network into subnets — public subnets for things that need internet access, private subnets for databases and internal services.</p>
+
+<p><strong>CIDR notation</strong> (e.g., <code>10.0.0.0/24</code>) defines an IP range. The number after the slash tells you how many IPs are in the range:</p>
+
+<table class="cmd-table">
+  <tr><th>CIDR</th><th>Usable IPs</th><th>Common Use</th></tr>
+  <tr><td><code>10.0.0.0/8</code></td><td class="cmd-desc">16 million+</td><td class="cmd-desc">Entire private network</td></tr>
+  <tr><td><code>10.0.0.0/16</code></td><td class="cmd-desc">65,534</td><td class="cmd-desc">AWS VPC default range</td></tr>
+  <tr><td><code>10.0.1.0/24</code></td><td class="cmd-desc">254</td><td class="cmd-desc">Single subnet — most common for AWS subnets</td></tr>
+  <tr><td><code>10.0.1.0/28</code></td><td class="cmd-desc">14</td><td class="cmd-desc">Small subnet for specific services</td></tr>
+</table>
+
+<h3>Checking Your Network Config in Linux</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">network info commands</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Show all network interfaces and their IP addresses</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ip addr show</span><br>
+    <span class="t-out">2: eth0: &lt;BROADCAST,MULTICAST,UP&gt; mtu 1500</span><br>
+    <span class="t-out">    inet <span class="t-highlight">10.0.1.45/24</span> brd 10.0.1.255 scope global eth0</span><br>
+    <span class="t-comment"># Your private IP: 10.0.1.45 on a /24 subnet</span><br>
+    <br>
+    <span class="t-comment"># Shorter version</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ip addr show | grep inet</span><br>
+    <br>
+    <span class="t-comment"># Show routing table — how traffic gets where it's going</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ip route show</span><br>
+    <span class="t-out">default via 10.0.1.1 dev eth0</span><br>
+    <span class="t-comment"># Default gateway: 10.0.1.1 — all traffic goes here first</span><br>
+    <br>
+    <span class="t-comment"># Check your public IP (as seen from the internet)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl ifconfig.me</span><br>
+    <span class="t-out">54.201.88.42</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ AWS VPC Setup You'll Actually Do</div>
+  When you create an AWS VPC you'll assign it a CIDR like <strong>10.0.0.0/16</strong>. Then you'll carve out subnets:<br>
+  <strong>10.0.1.0/24</strong> — Public subnet (web servers, load balancers)<br>
+  <strong>10.0.2.0/24</strong> — Private subnet (databases, internal APIs)<br><br>
+  Your EC2 instances get private IPs automatically. Public IPs are optional and assigned separately. Security Groups control what traffic is allowed in and out.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ip addr show</code> — see your network interfaces and IP addresses</li>
+    <li><code>ip addr show | grep inet</code> — just the IP lines, cleaner output</li>
+    <li><code>ip route show</code> — see your routing table and default gateway</li>
+    <li><code>curl ifconfig.me</code> — see your public IP address as the internet sees it</li>
+    <li>Notice the difference between your private IP (10.x or 192.168.x) and your public IP</li>
+  </ul>
+</div>
+  `
+},
+
+net_2: {
+  title: 'Ports & Protocols',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You deployed nginx but can't reach it from the browser. The server is running — so what's blocking it?</div>
+  <div class="scenario-body">Most connectivity issues in cloud engineering come down to ports. AWS Security Groups, firewalls, and app configs all use port numbers. You need to know the common ones cold and understand how traffic flows through them.</div>
+</div>
+
+<h3>What Is a Port?</h3>
+<p>If an IP address is like a building's street address, a <strong>port</strong> is like a specific door into that building. A server can run dozens of services simultaneously — each one listens on a different port number. When you connect, you specify both the IP and the port.</p>
+
+<h3>Ports You Must Know</h3>
+<table class="cmd-table">
+  <tr><th>Port</th><th>Protocol</th><th>What It's For</th><th>AWS Context</th></tr>
+  <tr><td><code>22</code></td><td class="cmd-desc">SSH</td><td class="cmd-desc">Secure remote terminal access</td><td class="cmd-desc">Open this in Security Group to SSH into EC2</td></tr>
+  <tr><td><code>80</code></td><td class="cmd-desc">HTTP</td><td class="cmd-desc">Unencrypted web traffic</td><td class="cmd-desc">Open for public web servers</td></tr>
+  <tr><td><code>443</code></td><td class="cmd-desc">HTTPS</td><td class="cmd-desc">Encrypted web traffic (SSL/TLS)</td><td class="cmd-desc">Open for secure websites</td></tr>
+  <tr><td><code>3306</code></td><td class="cmd-desc">MySQL</td><td class="cmd-desc">MySQL database connections</td><td class="cmd-desc">Keep this private — never open to 0.0.0.0/0</td></tr>
+  <tr><td><code>5432</code></td><td class="cmd-desc">PostgreSQL</td><td class="cmd-desc">PostgreSQL database connections</td><td class="cmd-desc">Same — private subnet only</td></tr>
+  <tr><td><code>6379</code></td><td class="cmd-desc">Redis</td><td class="cmd-desc">Redis cache connections</td><td class="cmd-desc">Private only</td></tr>
+  <tr><td><code>8080</code></td><td class="cmd-desc">HTTP alt</td><td class="cmd-desc">App servers, dev HTTP</td><td class="cmd-desc">Common for Node/Python apps</td></tr>
+</table>
+
+<h3>TCP vs UDP</h3>
+<table class="cmd-table">
+  <tr><th>Protocol</th><th>What It Is</th><th>Used For</th></tr>
+  <tr><td><code>TCP</code></td><td class="cmd-desc">Reliable, ordered delivery — confirms every packet arrived</td><td class="cmd-desc">HTTP, SSH, databases — anything where accuracy matters</td></tr>
+  <tr><td><code>UDP</code></td><td class="cmd-desc">Fast, fire-and-forget — no delivery confirmation</td><td class="cmd-desc">DNS, video streaming, gaming — speed over accuracy</td></tr>
+</table>
+
+<h3>Checking Ports on Your System</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">checking open ports</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># See all listening ports and which process owns them</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ss -tlnp</span><br>
+    <span class="t-out">State   Recv-Q  Send-Q  Local Address:Port  Process</span><br>
+    <span class="t-out">LISTEN  0       128     0.0.0.0:22         sshd</span><br>
+    <span class="t-out">LISTEN  0       511     0.0.0.0:80         nginx</span><br>
+    <span class="t-out">LISTEN  0       128     127.0.0.1:3306     mysqld</span><br>
+    <span class="t-comment"># -t=TCP -l=listening -n=numeric -p=show process</span><br>
+    <br>
+    <span class="t-comment"># Test if a port is reachable on a remote host</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nc -zv google.com 443</span><br>
+    <span class="t-out">Connection to google.com 443 port [tcp/https] succeeded!</span><br>
+    <br>
+    <span class="t-comment"># Check if a specific port is open on your server</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nc -zv localhost 22</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--red)">
+  <div class="info-box-title">🔒 Security Rule: Never Expose Databases to the Internet</div>
+  Port 3306 (MySQL) and 5432 (PostgreSQL) should NEVER be open to <code>0.0.0.0/0</code> in your AWS Security Group. Database ports should only be accessible from within your VPC — other EC2 instances in the same private subnet. A publicly exposed database is one of the most common causes of data breaches.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ss -tlnp</code> — see all listening ports on your system</li>
+    <li><code>ss -tlnp | grep :22</code> — confirm SSH is listening</li>
+    <li><code>nc -zv google.com 80</code> — test port 80 is reachable on google.com</li>
+    <li><code>nc -zv google.com 443</code> — test HTTPS port</li>
+    <li><code>nc -zv google.com 3306</code> — try MySQL port — it should fail (good!)</li>
+  </ul>
+</div>
+  `
+},
+
+net_3: {
+  title: 'DNS Basics',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You pointed your domain at an EC2 instance. It's not resolving. Is it DNS or is the server down?</div>
+  <div class="scenario-body">DNS issues are one of the most frustrating parts of cloud deployments. Changes take time to propagate, records have to be exactly right, and the error messages are often vague. Understanding DNS lets you diagnose these problems instead of just waiting and hoping.</div>
+</div>
+
+<h3>How DNS Works</h3>
+<p>DNS (Domain Name System) translates human-readable domain names into IP addresses. When you type <code>google.com</code>, your computer asks a DNS server "what's the IP for google.com?" and gets back <code>142.250.80.46</code>. Without DNS, you'd have to memorize IP addresses for every website.</p>
+
+<h3>DNS Record Types You'll Work With</h3>
+<table class="cmd-table">
+  <tr><th>Record</th><th>What It Does</th><th>Example</th></tr>
+  <tr><td><code>A</code></td><td class="cmd-desc">Maps domain to IPv4 address</td><td class="cmd-desc">mysite.com → 54.201.88.42</td></tr>
+  <tr><td><code>AAAA</code></td><td class="cmd-desc">Maps domain to IPv6 address</td><td class="cmd-desc">mysite.com → 2001:db8::1</td></tr>
+  <tr><td><code>CNAME</code></td><td class="cmd-desc">Alias — points one domain to another</td><td class="cmd-desc">www.mysite.com → mysite.com</td></tr>
+  <tr><td><code>MX</code></td><td class="cmd-desc">Mail server for the domain</td><td class="cmd-desc">Points email to Gmail, etc.</td></tr>
+  <tr><td><code>TXT</code></td><td class="cmd-desc">Text records — verification, SPF, DKIM</td><td class="cmd-desc">Proving domain ownership to AWS</td></tr>
+  <tr><td><code>NS</code></td><td class="cmd-desc">Nameservers — where DNS records are managed</td><td class="cmd-desc">Points to Route 53 nameservers</td></tr>
+</table>
+
+<h3>DNS Lookup Commands</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">dns tools</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Look up any domain's DNS records</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nslookup google.com</span><br>
+    <span class="t-out">Server:  127.0.0.53</span><br>
+    <span class="t-out">Address: 127.0.0.53#53</span><br>
+    <span class="t-out">Name:    google.com</span><br>
+    <span class="t-out">Address: 142.250.80.46</span><br>
+    <br>
+    <span class="t-comment"># More detailed DNS lookup (dig is the pro tool)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dig google.com</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dig google.com MX</span><span class="t-comment">  ← look up mail records</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dig google.com NS</span><span class="t-comment">  ← look up nameservers</span><br>
+    <br>
+    <span class="t-comment"># Check what your server resolves a hostname to</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">host google.com</span><br>
+    <span class="t-out">google.com has address 142.250.80.46</span><br>
+    <br>
+    <span class="t-comment"># Your DNS config — which DNS servers are you using?</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat /etc/resolv.conf</span><br>
+    <span class="t-out">nameserver 127.0.0.53</span><span class="t-comment">  ← local DNS resolver</span><br>
+    <br>
+    <span class="t-comment"># Local hostname overrides — map hostnames to IPs manually</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat /etc/hosts</span><br>
+    <span class="t-out">127.0.0.1 localhost</span><br>
+    <span class="t-out">10.0.1.50 myapp.internal</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 DNS Propagation</div>
+  When you change a DNS record, it doesn't update instantly. DNS records have a <strong>TTL (Time To Live)</strong> — a number of seconds before caches expire. A TTL of 3600 means it can take up to 1 hour for the change to reach everyone. Lower your TTL to 300 before making DNS changes, then restore it after. Check propagation at dnschecker.org.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>nslookup google.com</code> — basic DNS lookup</li>
+    <li><code>dig google.com</code> — detailed lookup, find the A record in the ANSWER section</li>
+    <li><code>dig google.com MX</code> — see Google's mail servers</li>
+    <li><code>cat /etc/resolv.conf</code> — see which DNS server your machine uses</li>
+    <li><code>cat /etc/hosts</code> — see local hostname overrides</li>
+    <li>Try <code>nslookup github.com</code> and <code>nslookup amazon.com</code> — note their IPs</li>
+  </ul>
+</div>
+  `
+},
+
+net_4: {
+  title: 'ping, curl, wget',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your EC2 instance can't reach the internet. Is it a network issue? A DNS issue? A firewall? These three tools help you find out in under a minute.</div>
+  <div class="scenario-body">ping, curl, and wget are the diagnostic and download tools you'll use constantly in cloud work. Each one tests a different layer of connectivity — together they let you isolate exactly where a problem is.</div>
+</div>
+
+<h3>ping — Test Basic Connectivity</h3>
+<p><code>ping</code> sends packets to a host and measures if they come back. It's the simplest connectivity test — if ping works, the network path is open.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ping</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ping google.com</span><br>
+    <span class="t-out">PING google.com (142.250.80.46) 56(84) bytes of data.</span><br>
+    <span class="t-out">64 bytes from lga34s32-in-f14.1e100.net: icmp_seq=1 ttl=117 time=12.4 ms</span><br>
+    <span class="t-out">64 bytes from lga34s32-in-f14.1e100.net: icmp_seq=2 ttl=117 time=11.8 ms</span><br>
+    <span class="t-comment"># Ctrl+C to stop. time= is round trip in milliseconds.</span><br>
+    <br>
+    <span class="t-comment"># Ping with a count (stops automatically)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ping -c 4 google.com</span><br>
+    <br>
+    <span class="t-comment"># Ping an IP directly (bypasses DNS — tests network only)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ping -c 4 8.8.8.8</span><br>
+    <span class="t-comment"># 8.8.8.8 is Google's public DNS server — always reachable</span>
+  </div>
+</div>
+
+<h3>curl — Transfer Data & Test HTTP</h3>
+<p><code>curl</code> makes HTTP requests from the terminal. It's how you test APIs, download files, check HTTP headers, and debug web services — all without a browser.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">curl usage</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Fetch a webpage or API response</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl https://api.github.com</span><br>
+    <br>
+    <span class="t-comment"># See HTTP response headers (-I = head only)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl -I https://google.com</span><br>
+    <span class="t-out">HTTP/2 301</span><br>
+    <span class="t-out">location: https://www.google.com/</span><br>
+    <span class="t-comment"># 301 = redirect. See where it's pointing.</span><br>
+    <br>
+    <span class="t-comment"># Download a file and save it</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl -o myfile.zip https://example.com/file.zip</span><br>
+    <br>
+    <span class="t-comment"># Test your own running web app</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl http://localhost:8080</span><br>
+    <br>
+    <span class="t-comment"># Send a POST request to an API</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl -X POST -H "Content-Type: application/json" \</span><br>
+    <span class="t-cmd">  -d '{"key":"value"}' https://api.example.com/endpoint</span>
+  </div>
+</div>
+
+<h3>wget — Download Files</h3>
+<p><code>wget</code> is purpose-built for downloading files — handles large files, retries on failure, and can download entire directory trees.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">wget usage</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Download a file to current directory</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">wget https://example.com/software.tar.gz</span><br>
+    <br>
+    <span class="t-comment"># Download and save with a specific filename</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">wget -O myapp.tar.gz https://example.com/software.tar.gz</span><br>
+    <br>
+    <span class="t-comment"># Continue an interrupted download</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">wget -c https://example.com/largefile.iso</span><br>
+    <span class="t-comment"># -c = continue where it left off</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 Diagnosing Connectivity Issues</div>
+  Use this order to isolate problems:<br>
+  1. <code>ping 8.8.8.8</code> — can you reach the internet at all? (tests network)<br>
+  2. <code>ping google.com</code> — is DNS resolving? (tests DNS)<br>
+  3. <code>curl -I https://google.com</code> — is HTTP working? (tests application layer)<br><br>
+  If step 1 fails: network/routing issue. If 1 works but 2 fails: DNS issue. If both work but 3 fails: firewall or app issue.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ping -c 4 8.8.8.8</code> — test basic network connectivity</li>
+    <li><code>ping -c 4 google.com</code> — test DNS + network</li>
+    <li><code>curl -I https://google.com</code> — see HTTP headers, note the status code</li>
+    <li><code>curl https://api.github.com</code> — call a real API, see JSON response</li>
+    <li><code>curl ifconfig.me</code> — your public IP in one command</li>
+    <li><code>wget -O /tmp/test.html https://example.com</code> — download a file</li>
+  </ul>
+</div>
+  `
+},
+
+net_5: {
+  title: 'netstat & ss: Open Connections',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your app should be listening on port 8080. Browser says "connection refused." Is the app even running?</div>
+  <div class="scenario-body">netstat and ss are the tools that answer "what's actually listening on this machine and what connections are open right now?" They're essential for debugging connectivity issues on servers — and for security audits to find unexpected open ports.</div>
+</div>
+
+<h3>ss — The Modern Socket Statistics Tool</h3>
+<p><code>ss</code> (socket statistics) replaced netstat as the modern standard. Faster and more detailed. This is what you'll use on any current Linux system.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ss — your go-to for connections</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Show all listening TCP ports with process names</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ss -tlnp</span><br>
+    <span class="t-out">State   Recv-Q  Send-Q  Local Address:Port  Peer Address:Port  Process</span><br>
+    <span class="t-out">LISTEN  0       128     0.0.0.0:22         0.0.0.0:*          sshd</span><br>
+    <span class="t-out">LISTEN  0       511     0.0.0.0:80         0.0.0.0:*          nginx</span><br>
+    <span class="t-out">LISTEN  0       128     127.0.0.1:3306     0.0.0.0:*          mysqld</span><br>
+    <br>
+    <span class="t-comment"># -t = TCP  -l = listening  -n = numeric ports  -p = show process</span><br>
+    <br>
+    <span class="t-comment"># Show active connections (not just listening)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ss -tnp</span><br>
+    <span class="t-out">State    Recv-Q  Send-Q  Local Address:Port  Peer Address:Port</span><br>
+    <span class="t-out">ESTAB    0       0       10.0.1.45:22        203.45.67.89:51234  sshd</span><br>
+    <span class="t-comment"># ESTAB = established connection — your active SSH session</span><br>
+    <br>
+    <span class="t-comment"># Check if a specific port is listening</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ss -tlnp | grep :8080</span><br>
+    <span class="t-comment"># No output = nothing is listening on 8080 — that's your bug</span>
+  </div>
+</div>
+
+<h3>netstat — The Classic (Still Works)</h3>
+<p><code>netstat</code> is older but still widely documented and available. You'll see it in older tutorials and on some systems:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">netstat — the classic</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Install if needed</span><br>
+    <span class="t-cmd">sudo apt install net-tools -y</span><br>
+    <br>
+    <span class="t-comment"># Show listening ports (equivalent to ss -tlnp)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">netstat -tlnp</span><br>
+    <br>
+    <span class="t-comment"># Show all connections</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">netstat -an</span>
+  </div>
+</div>
+
+<h4>Connection States You'll See</h4>
+<table class="cmd-table">
+  <tr><th>State</th><th>Meaning</th></tr>
+  <tr><td><code>LISTEN</code></td><td class="cmd-desc">Port is open and waiting for connections</td></tr>
+  <tr><td><code>ESTABLISHED</code></td><td class="cmd-desc">Active connection — data is flowing</td></tr>
+  <tr><td><code>TIME_WAIT</code></td><td class="cmd-desc">Connection closing — normal, temporary</td></tr>
+  <tr><td><code>CLOSE_WAIT</code></td><td class="cmd-desc">Remote end closed — local app hasn't acknowledged yet</td></tr>
+</table>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ The Port Debugging Workflow</div>
+  App not connecting? Run through this:<br>
+  1. <code>ss -tlnp | grep :PORT</code> — is anything listening on that port?<br>
+  2. If empty — your app isn't running or bound to wrong port. Check app logs.<br>
+  3. If listening — check AWS Security Group. Is the port open inbound?<br>
+  4. Still blocked — check if a local firewall (ufw) is blocking it: <code>sudo ufw status</code>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ss -tlnp</code> — see everything currently listening on your machine</li>
+    <li><code>ss -tlnp | grep :22</code> — confirm SSH is listening</li>
+    <li><code>ss -tnp</code> — see active (established) connections</li>
+    <li><code>ss -tlnp | grep :80</code> — is anything on port 80? Probably not on WSL2 — that's fine</li>
+    <li><code>sudo apt install net-tools -y && netstat -tlnp</code> — try the classic version</li>
+  </ul>
+</div>
+  `
+},
+
+net_quiz: { isQuiz: true, moduleId: 'net' }
 
 };
 
@@ -4978,6 +5878,198 @@ const QUIZZES = {
         ],
         correct: 1,
         exp: '<strong>grep -C 3</strong> shows each matching line plus 3 lines of context before AND after it (-C stands for Context). This is invaluable for debugging — errors rarely happen in isolation, and seeing the surrounding log lines tells you what led up to the error. -A shows lines After, -B shows lines Before, -C shows both.'
+      }
+    ]
+  },
+
+  proc: {
+    title: 'Module 05 Quiz — Processes & Monitoring',
+    questions: [
+      {
+        q: 'What does PID stand for and why does it matter?',
+        opts: ['Program Instruction Data — tracks code execution', 'Process ID — a unique number assigned to every running program', 'Primary Instance Directory — where process files live', 'Port Identification — links processes to network ports'],
+        correct: 1,
+        exp: '<strong>PID (Process ID)</strong> is the unique number Linux assigns to every running process. It\'s how you target a specific process — to kill it, check its resource usage, or find its parent. Without the PID, you can\'t manage processes precisely. Find PIDs with ps aux or pgrep.'
+      },
+      {
+        q: 'What command shows a live, updating view of all processes sorted by CPU usage?',
+        opts: ['ps aux', 'top', 'jobs', 'pstree'],
+        correct: 1,
+        exp: '<strong>top</strong> shows a real-time, auto-refreshing view of all processes. Press M to sort by memory, P to sort by CPU (default), q to quit, k to kill a process. htop is an improved version with colors and mouse support — install it with sudo apt install htop.'
+      },
+      {
+        q: 'What is the difference between kill and kill -9?',
+        opts: [
+          'kill -9 is faster but identical in behavior',
+          'kill sends SIGTERM (politely asks to stop with cleanup), kill -9 sends SIGKILL (immediately destroys, no cleanup)',
+          'kill works on files, kill -9 works on processes',
+          'kill -9 requires root, regular kill does not'
+        ],
+        correct: 1,
+        exp: '<strong>kill</strong> sends SIGTERM (signal 15) — a polite request that gives the process time to save data, close files, and clean up. <strong>kill -9</strong> sends SIGKILL — immediately destroys the process with no cleanup. Always try regular kill first. Use -9 only when the process won\'t respond, and never on databases without understanding the consequences.'
+      },
+      {
+        q: 'You start a long-running script and want to keep using your terminal. What do you add to the command?',
+        opts: ['--background', '&', '-bg', 'Ctrl+B'],
+        correct: 1,
+        exp: 'Adding <strong>&</strong> at the end of a command runs it in the background. Your terminal stays free immediately. The shell prints the job number and PID: [1] 4821. Use jobs to see background jobs, fg to bring one to foreground, bg to send a stopped job back to background.'
+      },
+      {
+        q: 'What does Ctrl+Z do to a running foreground process?',
+        opts: ['Terminates it completely', 'Pauses (suspends) it — can be resumed with fg or bg', 'Sends it to background automatically', 'Saves its output to a file'],
+        correct: 1,
+        exp: '<strong>Ctrl+Z</strong> suspends (pauses) the foreground process — it\'s still alive but not running. You get your terminal back. Resume it in the foreground with <code>fg</code> or send it to background with <code>bg</code>. This is different from Ctrl+C which terminates the process completely.'
+      },
+      {
+        q: 'Your disk is nearly full. Which two commands do you use to diagnose it?',
+        opts: [
+          'ls -la and cat',
+          'df -h to see which filesystem is full, then du -h to find which directories are biggest',
+          'top and free',
+          'ps aux and kill'
+        ],
+        correct: 1,
+        exp: '<strong>df -h</strong> shows overall disk usage per filesystem — tells you WHICH disk is full. <strong>du -h</strong> shows space used by specific directories — tells you WHAT is taking the space. Use them together: df first to identify the full filesystem, then du to drill down and find the culprit (usually /var/log or database files).'
+      },
+      {
+        q: 'What does free -h show and what column actually matters most?',
+        opts: [
+          'Shows disk space, the "used" column matters',
+          'Shows RAM and swap usage, the "available" column matters — it\'s the true usable memory',
+          'Shows CPU usage, the "free" column matters',
+          'Shows network bandwidth, the "total" column matters'
+        ],
+        correct: 1,
+        exp: '<strong>free -h</strong> shows RAM and swap usage. The <strong>available</strong> column (not "free") is what matters — it includes memory that\'s currently used for cache but can be reclaimed immediately. If swap usage is high, your server is memory-starved and will be slow. Add more RAM or reduce processes.'
+      },
+      {
+        q: 'What does nohup do and when would you use it?',
+        opts: [
+          'Runs a process with higher priority',
+          'Keeps a process running even after you log out of SSH — used for long-running tasks on servers',
+          'Prevents a process from using too much CPU',
+          'Runs a process as root without sudo'
+        ],
+        correct: 1,
+        exp: '<strong>nohup</strong> (no hang up) makes a process immune to the HUP signal that\'s sent when you close an SSH session. Without it, background processes die when you disconnect. Usage: <code>nohup python3 script.py > output.log 2>&1 &</code> — runs detached, output goes to log file.'
+      },
+      {
+        q: 'What does ps aux | grep nginx find?',
+        opts: [
+          'Installs nginx',
+          'Shows all running processes, then filters to only show lines containing "nginx"',
+          'Stops the nginx process',
+          'Shows nginx configuration'
+        ],
+        correct: 1,
+        exp: '<strong>ps aux</strong> lists all running processes from all users. The pipe <strong>|</strong> feeds that output to <strong>grep nginx</strong> which filters to only show lines containing "nginx". This is the standard way to find a specific process, get its PID, check its resource usage, and confirm it\'s actually running.'
+      },
+      {
+        q: 'What command kills ALL processes with a given name at once?',
+        opts: ['kill -all processname', 'pkill processname', 'killall processname', 'Both pkill and killall work'],
+        correct: 3,
+        exp: 'Both <strong>pkill processname</strong> and <strong>killall processname</strong> kill all processes matching the name. pkill is slightly more flexible (supports regex and other matching options). killall is more explicit about killing by exact name. Either works for typical use cases like pkill sleep or killall nginx.'
+      }
+    ]
+  },
+
+  net: {
+    title: 'Module 06 Quiz — Networking Fundamentals',
+    questions: [
+      {
+        q: 'What IP address always refers to the local machine itself?',
+        opts: ['10.0.0.1', '192.168.1.1', '127.0.0.1', '0.0.0.0'],
+        correct: 2,
+        exp: '<strong>127.0.0.1</strong> is the loopback address — it always points to "this machine." It\'s also called localhost. When you run a web app locally and visit http://localhost:8080, you\'re connecting to 127.0.0.1:8080. It never goes out to the network — it stays on the machine.'
+      },
+      {
+        q: 'What does CIDR notation /24 mean in 10.0.1.0/24?',
+        opts: [
+          'The network has 24 devices connected',
+          'Defines a subnet with 254 usable IP addresses (10.0.1.1 through 10.0.1.254)',
+          'The connection speed is 24 Mbps',
+          'The subnet mask is 24 bits wide making it a class C network with 65,534 IPs'
+        ],
+        correct: 1,
+        exp: '<strong>/24</strong> means the first 24 bits are the network portion, leaving 8 bits for hosts. 2^8 = 256 addresses, minus network address and broadcast = <strong>254 usable IPs</strong>. This is the most common subnet size for AWS subnets. /16 gives 65,534 IPs (common for VPCs). /28 gives 14 IPs (small subnets).'
+      },
+      {
+        q: 'Port 22 is used for what service, and why does it matter in AWS?',
+        opts: [
+          'HTTP web traffic — must be open for websites',
+          'SSH remote access — must be open in your EC2 Security Group to connect to the server',
+          'MySQL database — should always be public',
+          'DNS resolution — required for all servers'
+        ],
+        correct: 1,
+        exp: '<strong>Port 22 is SSH</strong> — the protocol you use to remotely access Linux servers. In AWS, you must add an inbound rule to your EC2 Security Group allowing TCP port 22 from your IP address. Best practice: only allow YOUR IP (not 0.0.0.0/0) to prevent unauthorized access attempts.'
+      },
+      {
+        q: 'What type of DNS record maps a domain name to an IPv4 address?',
+        opts: ['MX record', 'CNAME record', 'A record', 'TXT record'],
+        correct: 2,
+        exp: 'An <strong>A record</strong> (Address record) maps a domain name directly to an IPv4 address. Example: mysite.com → 54.201.88.42. CNAME maps one domain to another domain. MX specifies mail servers. TXT holds text data for verification and SPF/DKIM. The A record is what you set when pointing a domain at your EC2 instance.'
+      },
+      {
+        q: 'What is the key security rule about database ports like 3306 (MySQL)?',
+        opts: [
+          'They should be open to 0.0.0.0/0 for best performance',
+          'They must be on port 80 to work through firewalls',
+          'They should only be accessible within the VPC private subnet — never exposed to the internet',
+          'They require UDP instead of TCP'
+        ],
+        correct: 2,
+        exp: 'Database ports (3306 MySQL, 5432 PostgreSQL, 6379 Redis) should <strong>never</strong> be open to 0.0.0.0/0 in AWS Security Groups. Only allow them from within your VPC — specifically from the security group of your application servers. A publicly exposed database is one of the most common causes of data breaches and compliance violations.'
+      },
+      {
+        q: 'You run ss -tlnp | grep :8080 and get no output. What does this tell you?',
+        opts: [
+          'Port 8080 is open and working',
+          'Nothing is listening on port 8080 — your application is not running or bound to the wrong port',
+          'Port 8080 is blocked by firewall',
+          'The command was typed incorrectly'
+        ],
+        correct: 1,
+        exp: 'No output from <strong>ss -tlnp | grep :8080</strong> means nothing is listening on that port. Your application either: isn\'t running, crashed on startup, or is configured to listen on a different port. Check your app logs next. If there IS output but you still can\'t connect remotely, the issue is the AWS Security Group or a local firewall.'
+      },
+      {
+        q: 'What is the correct order to diagnose connectivity issues on an EC2 instance?',
+        opts: [
+          'Restart the server, then check logs',
+          'ping 8.8.8.8 (network) → ping google.com (DNS) → curl URL (HTTP layer)',
+          'Check Security Groups first, then DNS, then network',
+          'Run netstat, then ps aux, then top'
+        ],
+        correct: 1,
+        exp: 'The layered approach: <strong>ping 8.8.8.8</strong> tests raw network connectivity (no DNS needed). If that works, <strong>ping google.com</strong> tests DNS resolution. If both work, <strong>curl -I https://site.com</strong> tests the application/HTTP layer. Each step narrows down where the failure is — network, DNS, firewall, or app.'
+      },
+      {
+        q: 'What command checks your public IP address from the Linux terminal?',
+        opts: ['ip addr show', 'ifconfig', 'curl ifconfig.me', 'hostname -I'],
+        correct: 2,
+        exp: '<strong>curl ifconfig.me</strong> makes an HTTP request to ifconfig.me which returns your public IP as seen from the internet. <code>ip addr show</code> and <code>hostname -I</code> show your private IP only — the one assigned within your network. On EC2, your private IP might be 10.0.1.45 while your public IP is 54.201.88.42.'
+      },
+      {
+        q: 'What does TTL mean in DNS and why does it matter when making DNS changes?',
+        opts: [
+          'Total Transfer Limit — maximum file size for DNS records',
+          'Time To Live — how long DNS servers cache a record before checking for updates',
+          'Terminal Transfer Layer — the protocol DNS uses',
+          'Type Tag Label — how DNS records are classified'
+        ],
+        correct: 1,
+        exp: '<strong>TTL (Time To Live)</strong> is how long DNS resolvers cache a record before requesting a fresh copy. A TTL of 3600 means changes can take up to 1 hour to propagate globally. Best practice: lower your TTL to 300 (5 minutes) BEFORE making DNS changes, make the change, then restore it. This minimizes downtime if you make a mistake.'
+      },
+      {
+        q: 'What is the difference between curl and wget?',
+        opts: [
+          'They are identical — just different names',
+          'curl is for testing APIs and HTTP requests with full control over headers/methods; wget is purpose-built for downloading files with resume support',
+          'wget only works on Windows, curl only on Linux',
+          'curl requires root, wget does not'
+        ],
+        correct: 1,
+        exp: '<strong>curl</strong> is a versatile HTTP client — great for API testing, checking headers, sending POST requests, debugging web services. <strong>wget</strong> excels at downloading files — handles large downloads, retries on failure, can resume interrupted downloads with -c. In practice: use curl for HTTP debugging and API calls, wget for downloading files to a server.'
       }
     ]
   }
@@ -5717,6 +6809,52 @@ const FC_DECKS = [
       { q: 'Find all lines containing a pattern in a file', a: 'grep "pattern" filename', exp: 'Returns every line containing the pattern. -i for case-insensitive, -n for line numbers, -c to count matches.' },
       { q: 'Search recursively through all files in a directory', a: 'grep -r "pattern" /path/', exp: 'Searches every file inside the directory and all subdirectories. Add 2>/dev/null to hide permission errors.' },
       { q: 'Show matching lines with 3 lines of context around them', a: 'grep -C 3 "pattern" file', exp: '-C = context. Shows 3 lines before AND after each match. -A = after only, -B = before only.' },
+    ]
+  },
+  {
+    id: 'proc',
+    name: 'Processes & Monitoring',
+    icon: '📊',
+    color: '#ff6b35',
+    cards: [
+      { q: 'Show all running processes from all users', a: 'ps aux', exp: 'USER PID %CPU %MEM COMMAND — the full picture of everything running. Pipe into grep to find specific processes.' },
+      { q: 'Show a live updating view of processes by CPU usage', a: 'top', exp: 'Refreshes every few seconds. q=quit, k=kill, M=sort by memory, P=sort by CPU. htop is the better version.' },
+      { q: 'Find the PID of a running process by name', a: 'pgrep processname', exp: 'Returns just the PID(s). Cleaner than ps aux | grep. Use with kill: kill $(pgrep sleep)' },
+      { q: 'Kill a process politely (allows cleanup)', a: 'kill PID', exp: 'Sends SIGTERM (signal 15). Process can save data and clean up before stopping. Always try this first.' },
+      { q: 'Force kill a process immediately (no cleanup)', a: 'kill -9 PID', exp: 'Sends SIGKILL — process is destroyed instantly with no chance to clean up. Last resort only. Never on databases.' },
+      { q: 'Kill all processes with a given name', a: 'pkill processname', exp: 'Kills every process matching the name. killall does the same. pkill nginx stops all nginx processes at once.' },
+      { q: 'Run a command in the background', a: 'command &', exp: 'The & sends the process to background, freeing your terminal. Shell prints [job#] PID. Use jobs to see them.' },
+      { q: 'List all current background jobs', a: 'jobs', exp: 'Shows job number, status (Running/Stopped), and command. Use fg %1 or bg %1 with the job number.' },
+      { q: 'Bring a background job to the foreground', a: 'fg %1', exp: '%1 is the job number from jobs output. fg with no argument brings the most recent job.' },
+      { q: 'Pause a foreground process without killing it', a: 'Ctrl+Z', exp: 'Suspends the process. Your terminal returns. Resume with fg (foreground) or bg (background). NOT the same as Ctrl+C.' },
+      { q: 'Keep a process running after SSH logout', a: 'nohup command &', exp: 'Immune to hangup signal sent on logout. Output goes to nohup.out. Redirect: nohup cmd > log.txt 2>&1 &' },
+      { q: 'Check overall disk usage on all filesystems', a: 'df -h', exp: '-h = human readable. Look at Use% column. Over 85% = investigate. 100% = things will start breaking.' },
+      { q: 'Find which directory is using the most disk space', a: 'du -h --max-depth=1 /path', exp: 'Shows sizes of each subdirectory. Pipe to sort: du -h /var | sort -rh | head -10 to find biggest.' },
+      { q: 'Check RAM and swap usage', a: 'free -h', exp: 'Look at the "available" column — not "free". High swap usage means server is memory-starved and slow.' },
+      { q: 'What does the load average in top represent?', a: 'Average number of processes waiting for CPU over 1, 5, and 15 minutes', exp: 'Load average of 1.0 on a single-core machine = 100% busy. On a 4-core machine, 4.0 = 100%. Above core count = overloaded.' },
+    ]
+  },
+  {
+    id: 'net',
+    name: 'Networking Fundamentals',
+    icon: '🌐',
+    color: '#22d3ee',
+    cards: [
+      { q: 'What IP address always means "this machine"?', a: '127.0.0.1 (localhost)', exp: 'The loopback address. Traffic never leaves the machine. http://localhost:8080 connects to 127.0.0.1:8080 on your own server.' },
+      { q: 'Show all network interfaces and their IP addresses', a: 'ip addr show', exp: 'Lists every network interface (eth0, lo, etc.) with its IP address and subnet mask. ip addr show | grep inet for just IPs.' },
+      { q: 'Check your public IP address from the terminal', a: 'curl ifconfig.me', exp: 'Makes an HTTP request that returns your public IP as seen from the internet. Different from your private/internal IP.' },
+      { q: 'Show all listening TCP ports and which process owns them', a: 'ss -tlnp', exp: '-t=TCP -l=listening -n=numeric -p=process. The go-to command to see what\'s running on which port.' },
+      { q: 'Test basic network connectivity to a host', a: 'ping -c 4 hostname', exp: '-c 4 sends exactly 4 packets then stops. ping 8.8.8.8 tests network, ping google.com also tests DNS.' },
+      { q: 'What port does SSH use?', a: '22', exp: 'TCP port 22. Must be open in AWS Security Group inbound rules to connect to EC2. Best practice: restrict to your IP only, not 0.0.0.0/0.' },
+      { q: 'What ports do HTTP and HTTPS use?', a: 'HTTP: 80, HTTPS: 443', exp: 'Port 80 for unencrypted web traffic, 443 for SSL/TLS encrypted. Web servers listen on both. Open both in Security Group for public websites.' },
+      { q: 'What DNS record type maps a domain to an IPv4 address?', a: 'A record', exp: 'A record: domain → IPv4 address. AAAA: domain → IPv6. CNAME: domain → another domain. MX: mail servers. TXT: verification/SPF.' },
+      { q: 'Look up the IP address for a domain', a: 'nslookup domain.com', exp: 'Basic DNS lookup. dig domain.com gives more detail. host domain.com is another option. All three work.' },
+      { q: 'Make an HTTP request and see response headers', a: 'curl -I https://url.com', exp: '-I fetches headers only. Shows status code (200=OK, 301=redirect, 404=not found, 502=bad gateway). Great for debugging.' },
+      { q: 'Download a file from the internet', a: 'wget https://url.com/file', exp: 'Saves file to current directory. -O filename saves with a specific name. -c resumes interrupted downloads.' },
+      { q: 'What does /24 mean in 10.0.1.0/24?', a: '254 usable IP addresses in the subnet', exp: '/24 = 24 network bits, 8 host bits = 256 addresses - 2 = 254 usable. Most common AWS subnet size. /16 = 65,534 IPs.' },
+      { q: 'What is DNS TTL and why lower it before DNS changes?', a: 'Time To Live — how long DNS is cached. Lower it first so changes propagate faster.', exp: 'High TTL (3600) = up to 1 hour for changes to propagate. Set TTL to 300 before making changes, so mistakes are fixable quickly.' },
+      { q: 'Test if a specific port is reachable on a host', a: 'nc -zv hostname port', exp: '-z = scan only, -v = verbose output. nc -zv google.com 443 tests HTTPS. "succeeded" = port open, "refused" = closed.' },
+      { q: 'Check routing table — how traffic gets routed', a: 'ip route show', exp: 'Shows default gateway and all routes. "default via 10.0.1.1" means all traffic goes to that gateway first.' },
     ]
   }
 ];
