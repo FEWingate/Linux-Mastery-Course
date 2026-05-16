@@ -5530,7 +5530,920 @@ net_5: {
   `
 },
 
-net_quiz: { isQuiz: true, moduleId: 'net' }
+net_quiz: { isQuiz: true, moduleId: 'net' },
+
+// ── MODULE 7: SHELL SCRIPTING ──
+
+script_1: {
+  title: 'Your First Bash Script',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You run the same 8 commands every time you deploy your app. There has to be a better way.</div>
+  <div class="scenario-body">There is. Shell scripting turns a sequence of commands into a reusable, automated program. Every cloud engineer writes bash scripts — for deployments, backups, server setup, log rotation, and dozens of other tasks. This is where Linux goes from a tool you use to a tool that works for you.</div>
+</div>
+
+<h3>What Is a Bash Script?</h3>
+<p>A bash script is a plain text file containing Linux commands — the same commands you type in the terminal — executed in sequence. When you run the script, bash reads each line and executes it exactly as if you'd typed it yourself.</p>
+
+<h3>Your First Script</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">creating and running a script</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Step 1: Create the script file</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nano hello.sh</span><br>
+    <br>
+    <span class="t-comment"># Step 2: Write this inside the file:</span><br>
+    <span class="t-out">#!/bin/bash</span><br>
+    <span class="t-out"># My first script</span><br>
+    <span class="t-out">echo "Hello, Cloud Engineer!"</span><br>
+    <span class="t-out">echo "Today is: $(date)"</span><br>
+    <span class="t-out">echo "You are logged in as: $(whoami)"</span><br>
+    <span class="t-out">echo "Current directory: $(pwd)"</span><br>
+    <br>
+    <span class="t-comment"># Step 3: Save (Ctrl+O, Enter, Ctrl+X)</span><br>
+    <br>
+    <span class="t-comment"># Step 4: Make it executable</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">chmod +x hello.sh</span><br>
+    <br>
+    <span class="t-comment"># Step 5: Run it</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">./hello.sh</span><br>
+    <span class="t-out">Hello, Cloud Engineer!</span><br>
+    <span class="t-out">Today is: Fri May 9 20:45:12 UTC 2026</span><br>
+    <span class="t-out">You are logged in as: frank</span><br>
+    <span class="t-out">Current directory: /home/frank</span>
+  </div>
+</div>
+
+<h3>The Shebang Line</h3>
+<p>The first line <code>#!/bin/bash</code> is called the <strong>shebang</strong>. It tells the operating system which interpreter to use to run this script. Always include it as the very first line of every bash script — without it, the script may run incorrectly or not at all.</p>
+
+<table class="cmd-table">
+  <tr><th>Shebang</th><th>Meaning</th></tr>
+  <tr><td><code>#!/bin/bash</code></td><td class="cmd-desc">Use bash — most common, what you always want</td></tr>
+  <tr><td><code>#!/bin/sh</code></td><td class="cmd-desc">Use basic shell — more portable, fewer features</td></tr>
+  <tr><td><code>#!/usr/bin/env python3</code></td><td class="cmd-desc">Use Python 3 — for Python scripts</td></tr>
+</table>
+
+<h4>The $() Command Substitution</h4>
+<p><code>$(command)</code> runs a command and inserts its output inline. So <code>echo "Today is $(date)"</code> runs the <code>date</code> command and drops its output into the string. You'll use this constantly in scripts.</p>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 Always Use ./script.sh to Run</div>
+  The <code>./</code> before the script name tells bash to look in the current directory. Without it, bash searches your PATH and won't find the script. You can also run it as <code>bash hello.sh</code> — this works even without the execute permission set.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create <code>nano ~/hello.sh</code> and write the script above exactly</li>
+    <li>Save, exit, then <code>chmod +x ~/hello.sh</code></li>
+    <li>Run it: <code>./hello.sh</code> — see your output</li>
+    <li>Add a line: <code>echo "Free disk space: $(df -h / | tail -1 | awk '{print $4}')"</code></li>
+    <li>Run it again — you've just written a useful system info script</li>
+  </ul>
+</div>
+  `
+},
+
+script_2: {
+  title: 'Variables & User Input',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your deploy script needs to know which environment to deploy to — dev, staging, or production.</div>
+  <div class="scenario-body">Variables make scripts flexible and reusable. Instead of hardcoding values, you store them in variables and change them in one place. User input takes it further — the script asks for what it needs at runtime instead of you having to edit the file each time.</div>
+</div>
+
+<h3>Variables in Bash</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">variables</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">#!/bin/bash</span><br>
+    <br>
+    <span class="t-comment"># Define variables — NO spaces around the = sign</span><br>
+    <span class="t-out">NAME="Frank"</span><br>
+    <span class="t-out">ENVIRONMENT="production"</span><br>
+    <span class="t-out">MAX_RETRIES=3</span><br>
+    <br>
+    <span class="t-comment"># Use variables with $ prefix</span><br>
+    <span class="t-out">echo "Deploying to: $ENVIRONMENT"</span><br>
+    <span class="t-out">echo "Hello, $NAME"</span><br>
+    <span class="t-out">echo "Will retry up to $MAX_RETRIES times"</span><br>
+    <br>
+    <span class="t-comment"># Use curly braces when needed for clarity</span><br>
+    <span class="t-out">echo "Logfile: \${ENVIRONMENT}_deploy.log"</span><br>
+    <span class="t-comment"># Without braces: $ENVIRONMENT_deploy.log would look for variable ENVIRONMENT_deploy</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--red)">
+  <div class="info-box-title">⚠️ No Spaces Around =</div>
+  <code>NAME="Frank"</code> ✓ — correct<br>
+  <code>NAME = "Frank"</code> ✗ — this is a syntax error in bash<br><br>
+  Spaces around = break variable assignment. This is one of the most common bash mistakes.
+</div>
+
+<h3>Special Built-in Variables</h3>
+<table class="cmd-table">
+  <tr><th>Variable</th><th>What It Contains</th></tr>
+  <tr><td><code>$0</code></td><td class="cmd-desc">Name of the script itself</td></tr>
+  <tr><td><code>$1, $2, $3</code></td><td class="cmd-desc">Arguments passed to the script ($1 = first, $2 = second)</td></tr>
+  <tr><td><code>$#</code></td><td class="cmd-desc">Number of arguments passed</td></tr>
+  <tr><td><code>$?</code></td><td class="cmd-desc">Exit code of the last command (0 = success, non-zero = error)</td></tr>
+  <tr><td><code>$$</code></td><td class="cmd-desc">PID of the current script</td></tr>
+  <tr><td><code>$USER</code></td><td class="cmd-desc">Current username</td></tr>
+  <tr><td><code>$HOME</code></td><td class="cmd-desc">Home directory path</td></tr>
+</table>
+
+<h3>Reading User Input</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">user input with read</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">#!/bin/bash</span><br>
+    <br>
+    <span class="t-comment"># Ask user for input</span><br>
+    <span class="t-out">echo "Enter your name:"</span><br>
+    <span class="t-out">read NAME</span><br>
+    <span class="t-out">echo "Hello, $NAME!"</span><br>
+    <br>
+    <span class="t-comment"># Prompt on same line with -p flag</span><br>
+    <span class="t-out">read -p "Enter environment (dev/staging/prod): " ENV</span><br>
+    <span class="t-out">echo "Deploying to: $ENV"</span><br>
+    <br>
+    <span class="t-comment"># Silent input for passwords (-s = silent, no echo)</span><br>
+    <span class="t-out">read -sp "Enter password: " PASSWORD</span><br>
+    <span class="t-out">echo ""</span><br>
+    <span class="t-out">echo "Password saved (not shown)"</span><br>
+    <br>
+    <span class="t-comment"># Script arguments — run as: ./deploy.sh production</span><br>
+    <span class="t-out">ENVIRONMENT=$1</span><br>
+    <span class="t-out">echo "Deploying to: $ENVIRONMENT"</span>
+  </div>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create <code>nano ~/greet.sh</code> with: <code>read -p "What is your name? " NAME</code> then <code>echo "Welcome to cloud engineering, $NAME!"</code></li>
+    <li><code>chmod +x ~/greet.sh && ./greet.sh</code> — type your name when prompted</li>
+    <li>Add <code>echo "Script name: $0"</code> and <code>echo "Running as: $USER"</code> to see built-in variables</li>
+    <li>Run <code>ls /etc && echo "Exit code: $?"</code> — should be 0 (success)</li>
+    <li>Run <code>ls /fakedir && echo "Exit code: $?"</code> — should be non-zero (error)</li>
+  </ul>
+</div>
+  `
+},
+
+script_3: {
+  title: 'Conditionals: if/else',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your backup script should only run if there's enough disk space. Otherwise it should alert you.</div>
+  <div class="scenario-body">Conditionals let your scripts make decisions. Without if/else, a script just runs commands blindly. With conditionals, it can check conditions, handle errors, and take different actions based on what it finds — like a real program.</div>
+</div>
+
+<h3>Basic if/else Syntax</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">if/else structure</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">#!/bin/bash</span><br>
+    <br>
+    <span class="t-out">AGE=25</span><br>
+    <br>
+    <span class="t-out">if [ $AGE -ge 18 ]; then</span><br>
+    <span class="t-out">  echo "Access granted"</span><br>
+    <span class="t-out">elif [ $AGE -ge 13 ]; then</span><br>
+    <span class="t-out">  echo "Teen access only"</span><br>
+    <span class="t-out">else</span><br>
+    <span class="t-out">  echo "Access denied"</span><br>
+    <span class="t-out">fi</span><br>
+    <span class="t-comment"># fi closes the if block (if backwards)</span>
+  </div>
+</div>
+
+<h3>Comparison Operators</h3>
+<table class="cmd-table">
+  <tr><th>Numbers</th><th>Strings</th><th>Files</th></tr>
+  <tr><td><code>-eq</code> equal</td><td class="cmd-desc"><code>=</code> equal</td><td class="cmd-desc"><code>-f file</code> is a regular file</td></tr>
+  <tr><td><code>-ne</code> not equal</td><td class="cmd-desc"><code>!=</code> not equal</td><td class="cmd-desc"><code>-d dir</code> is a directory</td></tr>
+  <tr><td><code>-gt</code> greater than</td><td class="cmd-desc"><code>-z</code> empty string</td><td class="cmd-desc"><code>-e path</code> exists</td></tr>
+  <tr><td><code>-lt</code> less than</td><td class="cmd-desc"><code>-n</code> non-empty string</td><td class="cmd-desc"><code>-r file</code> is readable</td></tr>
+  <tr><td><code>-ge</code> greater or equal</td><td class="cmd-desc"></td><td class="cmd-desc"><code>-w file</code> is writable</td></tr>
+  <tr><td><code>-le</code> less or equal</td><td class="cmd-desc"></td><td class="cmd-desc"><code>-x file</code> is executable</td></tr>
+</table>
+
+<h3>Real Cloud Engineering Examples</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">practical conditionals</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Check if a file exists before using it</span><br>
+    <span class="t-out">if [ -f /etc/nginx/nginx.conf ]; then</span><br>
+    <span class="t-out">  echo "nginx config found"</span><br>
+    <span class="t-out">  sudo nginx -t</span><br>
+    <span class="t-out">else</span><br>
+    <span class="t-out">  echo "ERROR: nginx config missing!"</span><br>
+    <span class="t-out">fi</span><br>
+    <br>
+    <span class="t-comment"># Check if running as root</span><br>
+    <span class="t-out">if [ $USER != "root" ]; then</span><br>
+    <span class="t-out">  echo "This script must run as root"</span><br>
+    <span class="t-out">  exit 1</span><br>
+    <span class="t-out">fi</span><br>
+    <br>
+    <span class="t-comment"># Check disk space before backup</span><br>
+    <span class="t-out">DISK_FREE=$(df / | tail -1 | awk '{print $4}')</span><br>
+    <span class="t-out">if [ $DISK_FREE -lt 1000000 ]; then</span><br>
+    <span class="t-out">  echo "WARNING: Less than 1GB free. Skipping backup."</span><br>
+    <span class="t-out">  exit 1</span><br>
+    <span class="t-out">fi</span><br>
+    <span class="t-out">echo "Disk space OK. Starting backup..."</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--yellow)">
+  <div class="info-box-title">⚠️ Spaces Inside Brackets Are Required</div>
+  <code>[ $AGE -ge 18 ]</code> ✓ — spaces inside brackets required<br>
+  <code>[$AGE -ge 18]</code> ✗ — this will fail<br><br>
+  The spaces around the condition inside <code>[ ]</code> are not optional in bash. This trips everyone up at first.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create <code>nano ~/checkfile.sh</code> — check if <code>/etc/passwd</code> exists and print a message either way</li>
+    <li>Add a check: if the file is readable (<code>-r</code>), print "Readable" else "Not readable"</li>
+    <li>Add <code>read -p "Enter a number: " NUM</code> then check if it's greater than 10</li>
+    <li>Test your script with different inputs</li>
+    <li>Add <code>exit 1</code> to the else branch — check <code>echo $?</code> after running to see the exit code</li>
+  </ul>
+</div>
+  `
+},
+
+script_4: {
+  title: 'Loops: for & while',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You need to create 20 user accounts on a new server. One at a time would take forever.</div>
+  <div class="scenario-body">Loops are what make scripting genuinely powerful. Instead of repeating the same command 20 times, you write it once and let the loop handle the repetition. This is how you provision servers at scale, process files in bulk, and automate anything repetitive.</div>
+</div>
+
+<h3>for Loop</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">for loop examples</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Loop over a list of items</span><br>
+    <span class="t-out">for SERVER in web01 web02 web03 db01; do</span><br>
+    <span class="t-out">  echo "Checking server: $SERVER"</span><br>
+    <span class="t-out">  ping -c 1 $SERVER</span><br>
+    <span class="t-out">done</span><br>
+    <br>
+    <span class="t-comment"># Loop over a number range</span><br>
+    <span class="t-out">for i in {1..10}; do</span><br>
+    <span class="t-out">  echo "Creating user: clouduser$i"</span><br>
+    <span class="t-out">  sudo useradd -m clouduser$i</span><br>
+    <span class="t-out">done</span><br>
+    <br>
+    <span class="t-comment"># Loop over all files matching a pattern</span><br>
+    <span class="t-out">for LOGFILE in /var/log/*.log; do</span><br>
+    <span class="t-out">  echo "Processing: $LOGFILE"</span><br>
+    <span class="t-out">  gzip $LOGFILE</span><br>
+    <span class="t-out">done</span><br>
+    <br>
+    <span class="t-comment"># C-style for loop</span><br>
+    <span class="t-out">for ((i=0; i<5; i++)); do</span><br>
+    <span class="t-out">  echo "Attempt $i"</span><br>
+    <span class="t-out">done</span>
+  </div>
+</div>
+
+<h3>while Loop</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">while loop examples</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Keep trying until a service comes up</span><br>
+    <span class="t-out">MAX=10</span><br>
+    <span class="t-out">COUNT=0</span><br>
+    <span class="t-out">while [ $COUNT -lt $MAX ]; do</span><br>
+    <span class="t-out">  if curl -s http://localhost:8080 > /dev/null; then</span><br>
+    <span class="t-out">    echo "Service is up!"</span><br>
+    <span class="t-out">    break</span><br>
+    <span class="t-out">  fi</span><br>
+    <span class="t-out">  echo "Waiting... attempt $COUNT"</span><br>
+    <span class="t-out">  COUNT=$((COUNT + 1))</span><br>
+    <span class="t-out">  sleep 5</span><br>
+    <span class="t-out">done</span><br>
+    <br>
+    <span class="t-comment"># Read a file line by line</span><br>
+    <span class="t-out">while IFS= read -r LINE; do</span><br>
+    <span class="t-out">  echo "Processing: $LINE"</span><br>
+    <span class="t-out">done < /etc/hosts</span><br>
+    <br>
+    <span class="t-comment"># Infinite loop (use Ctrl+C to stop, or break to exit)</span><br>
+    <span class="t-out">while true; do</span><br>
+    <span class="t-out">  echo "Server status: $(uptime)"</span><br>
+    <span class="t-out">  sleep 60</span><br>
+    <span class="t-out">done</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ for vs while — When to Use Each</div>
+  <strong>for</strong> — when you know the list or count in advance (files, users, servers, numbers)<br>
+  <strong>while</strong> — when you're waiting for a condition to become true (service starts, retry logic, reading input)
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create <code>nano ~/loop.sh</code> — write a for loop that prints "Directory: X" for each item in /etc using <code>for DIR in /etc/*/; do</code></li>
+    <li>Write a for loop that creates 3 test files: <code>for i in {1..3}; do touch ~/testfile$i.txt; done</code></li>
+    <li>Verify with <code>ls ~/testfile*.txt</code></li>
+    <li>Write a while loop that counts from 1 to 5 using a counter variable</li>
+    <li>Clean up: <code>for i in {1..3}; do rm ~/testfile$i.txt; done</code></li>
+  </ul>
+</div>
+  `
+},
+
+script_5: {
+  title: 'Functions & Arguments',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your deploy script has grown to 100 lines. The same 10 lines appear in three places. Time to refactor.</div>
+  <div class="scenario-body">Functions let you write a block of code once and call it by name anywhere in your script. They make scripts readable, maintainable, and reusable. Any script longer than 30-40 lines should use functions.</div>
+</div>
+
+<h3>Defining and Calling Functions</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">functions in bash</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">#!/bin/bash</span><br>
+    <br>
+    <span class="t-comment"># Define a function</span><br>
+    <span class="t-out">greet() {</span><br>
+    <span class="t-out">  echo "Hello from the greet function!"</span><br>
+    <span class="t-out">}</span><br>
+    <br>
+    <span class="t-comment"># Call the function</span><br>
+    <span class="t-out">greet</span><br>
+    <br>
+    <span class="t-comment"># Function with arguments ($1, $2 inside function)</span><br>
+    <span class="t-out">deploy() {</span><br>
+    <span class="t-out">  local ENV=$1</span><br>
+    <span class="t-out">  local VERSION=$2</span><br>
+    <span class="t-out">  echo "Deploying version $VERSION to $ENV"</span><br>
+    <span class="t-out">  echo "Timestamp: $(date)"</span><br>
+    <span class="t-out">}</span><br>
+    <br>
+    <span class="t-comment"># Call with arguments</span><br>
+    <span class="t-out">deploy "production" "v2.4.1"</span><br>
+    <span class="t-out">deploy "staging" "v2.5.0-beta"</span>
+  </div>
+</div>
+
+<h3>A Real Deployment Script</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">deploy.sh — a real-world script</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">#!/bin/bash</span><br>
+    <br>
+    <span class="t-comment"># Configuration</span><br>
+    <span class="t-out">APP_DIR="/var/www/myapp"</span><br>
+    <span class="t-out">LOG_FILE="/var/log/deploy.log"</span><br>
+    <span class="t-out">ENVIRONMENT=\${1:-"staging"}</span><br>
+    <span class="t-comment"># \${1:-"staging"} means: use $1 if provided, otherwise "staging"</span><br>
+    <br>
+    <span class="t-comment"># Functions</span><br>
+    <span class="t-out">log() {</span><br>
+    <span class="t-out">  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a $LOG_FILE</span><br>
+    <span class="t-out">}</span><br>
+    <br>
+    <span class="t-out">check_prereqs() {</span><br>
+    <span class="t-out">  log "Checking prerequisites..."</span><br>
+    <span class="t-out">  if [ ! -d $APP_DIR ]; then</span><br>
+    <span class="t-out">    log "ERROR: App directory not found"</span><br>
+    <span class="t-out">    exit 1</span><br>
+    <span class="t-out">  fi</span><br>
+    <span class="t-out">}</span><br>
+    <br>
+    <span class="t-out">restart_services() {</span><br>
+    <span class="t-out">  log "Restarting services..."</span><br>
+    <span class="t-out">  sudo systemctl restart nginx</span><br>
+    <span class="t-out">  sudo systemctl restart myapp</span><br>
+    <span class="t-out">}</span><br>
+    <br>
+    <span class="t-comment"># Main execution</span><br>
+    <span class="t-out">log "Starting deployment to $ENVIRONMENT"</span><br>
+    <span class="t-out">check_prereqs</span><br>
+    <span class="t-out">restart_services</span><br>
+    <span class="t-out">log "Deployment complete"</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 local Variables in Functions</div>
+  Use <code>local</code> inside functions to keep variables scoped to that function. Without <code>local</code>, every variable in a function is global — it can accidentally overwrite variables with the same name elsewhere in your script. Always use <code>local</code> for function variables.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create <code>nano ~/sysinfo.sh</code> — write a <code>check_disk()</code> function that runs <code>df -h /</code></li>
+    <li>Write a <code>check_memory()</code> function that runs <code>free -h</code></li>
+    <li>Write a <code>check_processes()</code> function that shows top 5 CPU processes</li>
+    <li>Call all three functions in sequence at the bottom of the script</li>
+    <li>Run it — you've built a useful server health check script</li>
+  </ul>
+</div>
+  `
+},
+
+script_6: {
+  title: 'Cron Jobs: Scheduling Scripts',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You need your backup script to run automatically every night at 2am — without anyone having to remember to do it.</div>
+  <div class="scenario-body">Cron is Linux's built-in task scheduler. It runs commands or scripts automatically at any schedule you define — every minute, every hour, every day, every week. This is how production servers automate backups, log rotation, health checks, certificate renewals, and dozens of other recurring tasks.</div>
+</div>
+
+<h3>The crontab</h3>
+<p>Each user has their own <strong>crontab</strong> (cron table) — a file listing their scheduled jobs. You edit it with <code>crontab -e</code> and never edit the file directly.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">crontab commands</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Open your crontab for editing</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">crontab -e</span><br>
+    <br>
+    <span class="t-comment"># List your current cron jobs</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">crontab -l</span><br>
+    <br>
+    <span class="t-comment"># Remove all cron jobs (careful)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">crontab -r</span><br>
+    <br>
+    <span class="t-comment"># Edit root's crontab (system-wide jobs)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo crontab -e</span>
+  </div>
+</div>
+
+<h3>Cron Syntax</h3>
+<p>Every cron job has 5 time fields followed by the command:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">cron time format</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-out">* * * * * command</span><br>
+    <span class="t-out">│ │ │ │ │</span><br>
+    <span class="t-out">│ │ │ │ └── Day of week (0-7, 0&7=Sunday)</span><br>
+    <span class="t-out">│ │ │ └──── Month (1-12)</span><br>
+    <span class="t-out">│ │ └────── Day of month (1-31)</span><br>
+    <span class="t-out">│ └──────── Hour (0-23)</span><br>
+    <span class="t-out">└────────── Minute (0-59)</span>
+  </div>
+</div>
+
+<h3>Real Cron Job Examples</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">cron examples</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Run backup every day at 2am</span><br>
+    <span class="t-out">0 2 * * * /home/frank/backup.sh</span><br>
+    <br>
+    <span class="t-comment"># Run every 15 minutes</span><br>
+    <span class="t-out">*/15 * * * * /home/frank/health_check.sh</span><br>
+    <br>
+    <span class="t-comment"># Run every Monday at 9am</span><br>
+    <span class="t-out">0 9 * * 1 /home/frank/weekly_report.sh</span><br>
+    <br>
+    <span class="t-comment"># Run on the 1st of every month at midnight</span><br>
+    <span class="t-out">0 0 1 * * /home/frank/monthly_cleanup.sh</span><br>
+    <br>
+    <span class="t-comment"># Run every minute (useful for testing)</span><br>
+    <span class="t-out">* * * * * echo "Cron is working" >> /tmp/crontest.log</span><br>
+    <br>
+    <span class="t-comment"># Always use ABSOLUTE paths in cron — cron has no PATH</span><br>
+    <span class="t-out">0 2 * * * /usr/bin/python3 /home/frank/scripts/backup.py >> /var/log/backup.log 2>&1</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--yellow)">
+  <div class="info-box-title">⚠️ Always Use Absolute Paths in Cron</div>
+  Cron runs in a minimal environment with no PATH set. Commands like <code>python3</code> or <code>backup.sh</code> won't be found. Always use full paths: <code>/usr/bin/python3</code> and <code>/home/frank/scripts/backup.sh</code>. Add <code>>> /path/to/logfile 2>&1</code> to capture output — otherwise you'll never know if it ran or failed.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>crontab -e</code> — open your crontab (choose nano when asked which editor)</li>
+    <li>Add this test job: <code>* * * * * echo "Cron test $(date)" >> /tmp/crontest.log</code></li>
+    <li>Save and exit. Wait 1-2 minutes then run: <code>cat /tmp/crontest.log</code> — you should see entries</li>
+    <li><code>crontab -l</code> — list your current cron jobs</li>
+    <li><code>crontab -e</code> — remove the test job (delete the line) to stop it</li>
+  </ul>
+</div>
+  `
+},
+
+script_quiz: { isQuiz: true, moduleId: 'script' },
+
+// ── MODULE 8: PACKAGE MANAGEMENT ──
+
+pkg_1: {
+  title: 'apt: Install & Remove Software',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You just spun up a fresh EC2 instance. You need nginx, git, and Python installed. How do you do it?</div>
+  <div class="scenario-body">apt is Ubuntu and Debian's package manager — the tool that installs, removes, and manages software on your server. Instead of downloading installers and clicking through wizards, you type one command and apt handles everything: downloading, dependencies, and installation.</div>
+</div>
+
+<h3>What Is a Package Manager?</h3>
+<p>A <strong>package manager</strong> is like an app store for your server — but from the command line and completely free. It maintains a catalog of thousands of software packages, resolves dependencies automatically (if nginx needs library X, apt installs X too), and keeps everything organized.</p>
+
+<h3>The Essential apt Commands</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">apt basics</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Install a package</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt install nginx</span><br>
+    <span class="t-out">Do you want to continue? [Y/n]</span><br>
+    <br>
+    <span class="t-comment"># Install without confirmation prompt (-y = yes to all)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt install nginx -y</span><br>
+    <br>
+    <span class="t-comment"># Install multiple packages at once</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt install nginx git python3 curl wget -y</span><br>
+    <br>
+    <span class="t-comment"># Remove a package (keeps config files)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt remove nginx</span><br>
+    <br>
+    <span class="t-comment"># Remove package AND its config files (clean uninstall)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt purge nginx</span><br>
+    <br>
+    <span class="t-comment"># Remove unused dependencies left behind</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt autoremove</span>
+  </div>
+</div>
+
+<h3>Searching for Packages</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">finding packages</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Search for a package by name or description</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">apt search "web server"</span><br>
+    <br>
+    <span class="t-comment"># Get detailed info about a package before installing</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">apt show nginx</span><br>
+    <span class="t-out">Package: nginx</span><br>
+    <span class="t-out">Version: 1.24.0-1ubuntu1</span><br>
+    <span class="t-out">Depends: nginx-core | nginx-full | nginx-light | nginx-extras</span><br>
+    <br>
+    <span class="t-comment"># Check if a package is installed</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dpkg -l | grep nginx</span><br>
+    <span class="t-out">ii  nginx  1.24.0-1ubuntu1  amd64  small, powerful, scalable web server</span><br>
+    <span class="t-comment"># "ii" at the start means installed</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ First Thing on Any New EC2 Instance</div>
+  The first two commands on any fresh server should always be:<br><br>
+  <code>sudo apt update</code> — refresh the package catalog<br>
+  <code>sudo apt upgrade -y</code> — install all security updates<br><br>
+  Then install whatever you need. Skipping this means you might install outdated software with known vulnerabilities.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>sudo apt install htop tree -y</code> — install two useful tools</li>
+    <li><code>htop</code> — confirm it installed (F10 to quit)</li>
+    <li><code>tree /etc | head -30</code> — tree shows directory structure visually</li>
+    <li><code>apt show tree</code> — see package details</li>
+    <li><code>sudo apt remove tree</code> — uninstall it</li>
+    <li><code>sudo apt autoremove</code> — clean up any leftover dependencies</li>
+  </ul>
+</div>
+  `
+},
+
+pkg_2: {
+  title: 'apt update vs apt upgrade',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You run apt install nginx and get "package not found." Your teammate runs the same command and it works fine. What's different?</div>
+  <div class="scenario-body">The difference is almost always apt update. Without it, your system is working from a stale catalog that doesn't know about new packages or new versions. Update and upgrade are two of the most important commands for keeping servers secure and functional.</div>
+</div>
+
+<h3>apt update vs apt upgrade — The Critical Difference</h3>
+<table class="cmd-table">
+  <tr><th>Command</th><th>What It Does</th><th>Downloads Software?</th></tr>
+  <tr><td><code>apt update</code></td><td class="cmd-desc">Refreshes the package catalog — fetches list of available packages and versions</td><td class="cmd-desc">No — just updates the index</td></tr>
+  <tr><td><code>apt upgrade</code></td><td class="cmd-desc">Installs available updates for all currently installed packages</td><td class="cmd-desc">Yes — downloads and installs updates</td></tr>
+  <tr><td><code>apt full-upgrade</code></td><td class="cmd-desc">Like upgrade but also handles dependency changes (may remove packages)</td><td class="cmd-desc">Yes — more aggressive</td></tr>
+</table>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">update workflow</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Step 1: Refresh the package list (always first)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt update</span><br>
+    <span class="t-out">Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease</span><br>
+    <span class="t-out">Get:2 http://security.ubuntu.com/ubuntu jammy-security InRelease</span><br>
+    <span class="t-out">Fetched 3,182 kB in 2s</span><br>
+    <span class="t-out">42 packages can be upgraded.</span><br>
+    <br>
+    <span class="t-comment"># Step 2: Install the updates</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt upgrade -y</span><br>
+    <br>
+    <span class="t-comment"># Do both in one line (common in setup scripts)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt update && sudo apt upgrade -y</span><br>
+    <span class="t-comment"># && means: only run upgrade if update succeeded</span>
+  </div>
+</div>
+
+<h3>Automating Updates</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">automatic security updates</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Install the unattended-upgrades package</span><br>
+    <span class="t-cmd">sudo apt install unattended-upgrades -y</span><br>
+    <br>
+    <span class="t-comment"># Enable automatic security updates</span><br>
+    <span class="t-cmd">sudo dpkg-reconfigure --priority=low unattended-upgrades</span><br>
+    <span class="t-comment"># Select "Yes" — security patches will install automatically</span><br>
+    <br>
+    <span class="t-comment"># Check what would be upgraded without actually doing it</span><br>
+    <span class="t-cmd">apt list --upgradable</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 The && Operator</div>
+  <code>sudo apt update && sudo apt upgrade -y</code> — the <code>&&</code> is "AND" — run the second command ONLY if the first succeeded. If apt update fails (no internet), apt upgrade won't run on a stale list. This pattern is used everywhere in shell scripts for safe command chaining.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>sudo apt update</code> — refresh your package list, note how many can be upgraded</li>
+    <li><code>apt list --upgradable</code> — see exactly which packages have updates</li>
+    <li><code>sudo apt upgrade -y</code> — install all updates (this might take a few minutes)</li>
+    <li><code>sudo apt autoremove</code> — clean up packages no longer needed</li>
+    <li><code>sudo apt update && sudo apt upgrade -y</code> — practice the combined one-liner</li>
+  </ul>
+</div>
+  `
+},
+
+pkg_3: {
+  title: 'Searching & Inspecting Packages',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You need a tool to monitor network traffic but you don't know what it's called. How do you find it?</div>
+  <div class="scenario-body">apt's search and inspection tools let you find packages you don't know the name of, verify what's installed, check package contents before installing, and understand dependencies. These are the commands you use when you know what you need to do but not what package does it.</div>
+</div>
+
+<h3>Searching and Inspecting</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">package inspection commands</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Search packages by keyword</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">apt search "network monitor"</span><br>
+    <span class="t-out">nload/jammy 0.7.4 amd64 — console network traffic monitor</span><br>
+    <span class="t-out">iftop/jammy 1.0pre4 amd64 — display bandwidth usage on interface</span><br>
+    <br>
+    <span class="t-comment"># Show detailed package information</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">apt show nload</span><br>
+    <span class="t-out">Package: nload</span><br>
+    <span class="t-out">Version: 0.7.4</span><br>
+    <span class="t-out">Description: monitor network traffic and bandwidth usage</span><br>
+    <br>
+    <span class="t-comment"># List all installed packages</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dpkg -l</span><br>
+    <br>
+    <span class="t-comment"># Check if a specific package is installed</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dpkg -l | grep nginx</span><br>
+    <span class="t-out">ii  nginx  1.24.0  amd64  small, powerful web server</span><br>
+    <span class="t-comment"># ii = installed. rc = removed but config still there. un = not installed.</span><br>
+    <br>
+    <span class="t-comment"># See which package a command belongs to</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dpkg -S /usr/bin/curl</span><br>
+    <span class="t-out">curl: /usr/bin/curl</span><br>
+    <span class="t-comment"># curl binary belongs to the "curl" package</span><br>
+    <br>
+    <span class="t-comment"># List all files installed by a package</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">dpkg -L nginx</span><br>
+    <span class="t-out">/etc/nginx</span><br>
+    <span class="t-out">/etc/nginx/nginx.conf</span><br>
+    <span class="t-out">/usr/sbin/nginx</span>
+  </div>
+</div>
+
+<h3>Package Cache Management</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">cleaning up</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Clear downloaded package files (free disk space)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt clean</span><br>
+    <br>
+    <span class="t-comment"># Remove only packages no longer needed</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt autoremove</span><br>
+    <br>
+    <span class="t-comment"># Full cleanup in one shot</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt autoremove && sudo apt clean</span>
+  </div>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>apt search "text editor"</code> — find text editor packages available</li>
+    <li><code>apt show vim</code> — see vim's full package details</li>
+    <li><code>dpkg -l | grep python</code> — find all Python-related packages installed</li>
+    <li><code>dpkg -S /bin/ls</code> — find which package owns the ls command</li>
+    <li><code>dpkg -L bash | head -20</code> — see files installed by the bash package</li>
+  </ul>
+</div>
+  `
+},
+
+pkg_4: {
+  title: 'Snap & Other Package Systems',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You try to install a package with apt and it's either not available or the version is too old. Now what?</div>
+  <div class="scenario-body">apt isn't the only way to install software on Ubuntu. Snap packages, direct downloads, and package repositories give you options when apt doesn't have what you need. Knowing the alternatives means you're never stuck waiting for apt to catch up.</div>
+</div>
+
+<h3>Snap Packages</h3>
+<p>Snap is Ubuntu's alternative package system. Snap packages are self-contained — they bundle all their own dependencies, so they run the same way on any Linux system. The tradeoff is they're larger and sometimes slower to start.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">snap commands</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Install a snap package</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo snap install code --classic</span><br>
+    <span class="t-comment"># --classic allows broader system access (needed for some tools)</span><br>
+    <br>
+    <span class="t-comment"># List installed snaps</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">snap list</span><br>
+    <br>
+    <span class="t-comment"># Search for a snap package</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">snap find "aws"</span><br>
+    <br>
+    <span class="t-comment"># Remove a snap</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo snap remove code</span><br>
+    <br>
+    <span class="t-comment"># Update all snaps</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo snap refresh</span>
+  </div>
+</div>
+
+<h3>Adding apt Repositories (PPAs)</h3>
+<p>Sometimes a package exists but isn't in Ubuntu's default repos. You can add a PPA (Personal Package Archive) to get it:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">adding repos — AWS CLI example</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Example: Install AWS CLI v2 (not in default apt repos)</span><br>
+    <span class="t-comment"># Download the installer</span><br>
+    <span class="t-cmd">curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"</span><br>
+    <br>
+    <span class="t-comment"># Install unzip if needed</span><br>
+    <span class="t-cmd">sudo apt install unzip -y</span><br>
+    <br>
+    <span class="t-comment"># Unzip and install</span><br>
+    <span class="t-cmd">unzip awscliv2.zip</span><br>
+    <span class="t-cmd">sudo ./aws/install</span><br>
+    <br>
+    <span class="t-comment"># Verify installation</span><br>
+    <span class="t-cmd">aws --version</span><br>
+    <span class="t-out">aws-cli/2.15.0 Python/3.11.6 Linux/6.2.0 botocore/2.4.5</span>
+  </div>
+</div>
+
+<h4>apt vs snap — When to Use Each</h4>
+<table class="cmd-table">
+  <tr><th>Use apt when</th><th>Use snap when</th></tr>
+  <tr><td class="cmd-desc">Package is in the standard Ubuntu repos</td><td class="cmd-desc">You need a newer version than apt offers</td></tr>
+  <tr><td class="cmd-desc">You want the lightest installation</td><td class="cmd-desc">The developer only distributes via snap</td></tr>
+  <tr><td class="cmd-desc">It's a server with minimal footprint</td><td class="cmd-desc">You want automatic updates</td></tr>
+</table>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>snap list</code> — see what snaps are currently installed on your system</li>
+    <li><code>snap find "node"</code> — search for Node.js related snaps</li>
+    <li><code>apt show nodejs</code> — compare: see what version apt has</li>
+    <li><code>sudo apt install unzip -y</code> — install unzip (you'll need it for AWS CLI later)</li>
+    <li><code>which unzip</code> — confirm it's installed and see where it lives</li>
+  </ul>
+</div>
+  `
+},
+
+pkg_quiz: { isQuiz: true, moduleId: 'pkg' }
 
 };
 
@@ -6070,6 +6983,228 @@ const QUIZZES = {
         ],
         correct: 1,
         exp: '<strong>curl</strong> is a versatile HTTP client — great for API testing, checking headers, sending POST requests, debugging web services. <strong>wget</strong> excels at downloading files — handles large downloads, retries on failure, can resume interrupted downloads with -c. In practice: use curl for HTTP debugging and API calls, wget for downloading files to a server.'
+      }
+    ]
+  },
+
+  script: {
+    title: 'Module 07 Quiz — Shell Scripting',
+    questions: [
+      {
+        q: 'What is the shebang line and where does it go?',
+        opts: [
+          'A comment explaining the script — can go anywhere',
+          '#!/bin/bash — must be the very first line, tells the OS which interpreter to use',
+          '#bash — goes after the first command',
+          '#!/usr/bin — goes at the end of the script'
+        ],
+        correct: 1,
+        exp: 'The <strong>shebang</strong> (#!/bin/bash) must be the very first line of every bash script. It tells the operating system which interpreter to use to execute the file. Without it, the script may not run correctly or may be interpreted by the wrong shell.'
+      },
+      {
+        q: 'What is wrong with this variable assignment: NAME = "Frank"?',
+        opts: [
+          'The variable name should be lowercase',
+          'Quotes are not needed',
+          'There cannot be spaces around the = sign in bash',
+          'Nothing is wrong'
+        ],
+        correct: 2,
+        exp: 'In bash, <strong>no spaces are allowed around =</strong> in variable assignment. NAME="Frank" is correct. NAME = "Frank" is a syntax error — bash interprets NAME as a command and = and "Frank" as arguments. This is one of the most common bash mistakes.'
+      },
+      {
+        q: 'What does $1 represent in a bash script?',
+        opts: [
+          'The script\'s process ID',
+          'The first argument passed to the script when running it',
+          'The first line of the script',
+          'A random number'
+        ],
+        correct: 1,
+        exp: '<strong>$1</strong> is the first argument passed to the script. If you run <code>./deploy.sh production</code>, then $1 = "production". $2 is the second argument, $# is the total number of arguments. This lets you write flexible scripts that behave differently based on input.'
+      },
+      {
+        q: 'What does the && operator do between two commands?',
+        opts: [
+          'Runs both commands simultaneously in parallel',
+          'Runs the second command only if the first command succeeded (exit code 0)',
+          'Combines the output of both commands',
+          'Runs the second command only if the first failed'
+        ],
+        correct: 1,
+        exp: '<strong>&&</strong> is the AND operator — the second command runs ONLY if the first succeeded. <code>sudo apt update && sudo apt upgrade</code> only upgrades if update succeeded. If the first command fails (non-zero exit code), the second is skipped. This prevents running commands on a bad state.'
+      },
+      {
+        q: 'You write an if statement: if [$AGE -ge 18]; then — but it fails. What is wrong?',
+        opts: [
+          'The variable name is wrong',
+          'Spaces are required inside the brackets: if [ $AGE -ge 18 ]; then',
+          '-ge should be >=',
+          'then should be on the next line'
+        ],
+        correct: 1,
+        exp: 'Bash requires <strong>spaces inside the square brackets</strong>: <code>if [ $AGE -ge 18 ]; then</code>. Without spaces, bash can\'t parse the condition. The space before and after the brackets is mandatory, not optional. Missing spaces are the most common if-statement bug in bash scripts.'
+      },
+      {
+        q: 'What is the difference between a for loop and a while loop?',
+        opts: [
+          'for loops are faster, while loops are more accurate',
+          'for loops iterate over a known list or range; while loops repeat until a condition becomes false',
+          'while loops are for numbers only; for loops are for strings',
+          'They are identical in behavior'
+        ],
+        correct: 1,
+        exp: '<strong>for loops</strong> are best when you know the collection in advance — a list of servers, a range of numbers, all files matching a pattern. <strong>while loops</strong> are best when you\'re waiting for a condition — retry until a service starts, keep running until a counter reaches a limit, read a file line by line.'
+      },
+      {
+        q: 'What does crontab -e do?',
+        opts: [
+          'Executes all cron jobs immediately',
+          'Edits your personal cron job schedule in the default editor',
+          'Erases all cron jobs',
+          'Shows cron job execution history'
+        ],
+        correct: 1,
+        exp: '<strong>crontab -e</strong> opens your personal crontab file in the default editor for editing. crontab -l lists current jobs. crontab -r removes all jobs. You should always use crontab -e rather than editing cron files directly — it validates syntax before saving.'
+      },
+      {
+        q: 'What is the correct cron schedule to run a script every day at 3:30am?',
+        opts: ['30 3 * * * /path/script.sh', '3 30 * * * /path/script.sh', '* * 3 30 * /path/script.sh', '30 * * * 3 /path/script.sh'],
+        correct: 0,
+        exp: 'Cron format is: <strong>minute hour day month weekday command</strong>. So <code>30 3 * * *</code> = minute 30, hour 3, every day, every month, every weekday. Remember the order: minute comes before hour. crontab.guru is a great tool to verify cron schedules before deploying them.'
+      },
+      {
+        q: 'Why must you always use absolute paths in cron jobs?',
+        opts: [
+          'Relative paths are slower',
+          'Cron runs in a minimal environment without the normal PATH variable — it can\'t find commands by name alone',
+          'Absolute paths are a security requirement',
+          'Cron only reads files from /etc'
+        ],
+        correct: 1,
+        exp: 'Cron runs with a minimal environment — your normal <strong>PATH</strong> variable (which tells bash where to find commands like python3, nginx, etc.) is not set. So <code>python3 script.py</code> fails because cron can\'t find python3. Use full paths: <code>/usr/bin/python3 /home/frank/script.py</code>. Always redirect output too: <code>>> /path/to/log 2>&1</code>.'
+      },
+      {
+        q: 'What does the local keyword do inside a bash function?',
+        opts: [
+          'Makes the variable available to all scripts on the system',
+          'Scopes the variable to the function — prevents it from affecting variables with the same name outside the function',
+          'Makes the variable read-only',
+          'Exports the variable to child processes'
+        ],
+        correct: 1,
+        exp: '<strong>local</strong> scopes a variable to the function it\'s defined in. Without local, bash variables are global — a variable named ENV inside a function would overwrite a variable named ENV defined outside it. Always use local for function variables to prevent unexpected side effects in larger scripts.'
+      }
+    ]
+  },
+
+  pkg: {
+    title: 'Module 08 Quiz — Package Management',
+    questions: [
+      {
+        q: 'What is the difference between apt update and apt upgrade?',
+        opts: [
+          'They are the same command with different names',
+          'apt update refreshes the package catalog (no installs); apt upgrade installs available updates for installed packages',
+          'apt update installs updates; apt upgrade refreshes the catalog',
+          'apt update is for security patches only; apt upgrade is for all updates'
+        ],
+        correct: 1,
+        exp: '<strong>apt update</strong> downloads the latest package list from repositories — it tells your system what\'s available but installs nothing. <strong>apt upgrade</strong> actually downloads and installs newer versions of your installed packages. Always run update before upgrade, and before installing anything new on a server that hasn\'t been updated recently.'
+      },
+      {
+        q: 'What flag skips the "Do you want to continue? [Y/n]" prompt in apt?',
+        opts: ['-y', '--yes-all', '-f', '--skip'],
+        correct: 0,
+        exp: '<strong>-y</strong> (or --yes) automatically answers yes to all prompts. Essential for scripts and automation where no human is present to confirm. Example: <code>sudo apt install nginx -y</code>. Use with care — it will accept all changes without asking.'
+      },
+      {
+        q: 'What is the difference between apt remove and apt purge?',
+        opts: [
+          'They are identical',
+          'apt remove uninstalls the package but keeps config files; apt purge removes everything including config files',
+          'apt purge is faster than apt remove',
+          'apt remove is for snap packages; apt purge is for apt packages'
+        ],
+        correct: 1,
+        exp: '<strong>apt remove</strong> uninstalls the package binaries but leaves configuration files behind — useful if you might reinstall later. <strong>apt purge</strong> removes everything including config files — a complete clean uninstall. When removing a package you\'re done with, purge is usually the better choice.'
+      },
+      {
+        q: 'What does dpkg -l | grep nginx tell you?',
+        opts: [
+          'Installs nginx',
+          'Shows nginx configuration',
+          'Whether nginx is installed and its version',
+          'Lists nginx log files'
+        ],
+        correct: 2,
+        exp: '<strong>dpkg -l</strong> lists all installed packages. Piping to grep nginx filters to show only nginx-related entries. The status field at the start tells you: ii = installed, rc = removed but config remains, un = not installed. This is the fastest way to verify whether a package is installed.'
+      },
+      {
+        q: 'What should you always run on a fresh EC2 instance before installing any software?',
+        opts: [
+          'sudo apt install everything',
+          'sudo reboot',
+          'sudo apt update && sudo apt upgrade -y',
+          'sudo apt clean'
+        ],
+        correct: 2,
+        exp: '<strong>sudo apt update && sudo apt upgrade -y</strong> should be the first thing on any fresh server. Update refreshes the package catalog, upgrade installs all security patches. Without this, you might install outdated software with known vulnerabilities. The && ensures upgrade only runs if update succeeded.'
+      },
+      {
+        q: 'What does sudo apt autoremove do?',
+        opts: [
+          'Automatically updates all packages',
+          'Removes packages that were installed as dependencies but are no longer needed',
+          'Removes all user-installed packages',
+          'Reverts the last apt operation'
+        ],
+        correct: 1,
+        exp: '<strong>apt autoremove</strong> removes packages that were automatically installed as dependencies for other packages, but are now orphaned because the original package was removed. Run it after removing packages to keep your system clean. It\'s safe — it only removes packages no other installed package depends on.'
+      },
+      {
+        q: 'What is a Snap package and when would you use one over apt?',
+        opts: [
+          'A faster version of apt packages — always prefer snap',
+          'A self-contained package that bundles its own dependencies — useful when you need a newer version than apt offers',
+          'A package only available on Ubuntu Server, not Desktop',
+          'Snap packages require internet to run'
+        ],
+        correct: 1,
+        exp: '<strong>Snap packages</strong> bundle all their dependencies, making them run consistently across systems. Use snap when: apt has an outdated version, the developer only distributes via snap, or you want automatic updates. The tradeoffs are larger package size and sometimes slower startup. For servers, apt is generally preferred when available.'
+      },
+      {
+        q: 'How do you find which apt package a specific command belongs to?',
+        opts: [
+          'apt show commandname',
+          'dpkg -S /path/to/command',
+          'apt search commandname',
+          'which --package commandname'
+        ],
+        correct: 1,
+        exp: '<strong>dpkg -S /path/to/command</strong> shows which package owns a file. Example: <code>dpkg -S /usr/bin/curl</code> returns "curl: /usr/bin/curl". First find the full path with <code>which commandname</code>, then use dpkg -S. Useful when you need to know what package to install to get a specific tool.'
+      },
+      {
+        q: 'What does sudo apt clean do?',
+        opts: [
+          'Removes all installed packages',
+          'Deletes locally cached package files (.deb files) to free disk space',
+          'Cleans corrupted package database',
+          'Removes all configuration files'
+        ],
+        correct: 1,
+        exp: '<strong>apt clean</strong> deletes the locally cached .deb package files that apt downloaded during installation. These are stored in /var/cache/apt/archives/ and can accumulate to hundreds of MB over time. Cleaning them frees disk space. The packages are still available to reinstall from the internet — apt just has to download them again.'
+      },
+      {
+        q: 'Why is sudo apt install unzip -y important before installing the AWS CLI v2?',
+        opts: [
+          'unzip is required to run the AWS CLI',
+          'The AWS CLI v2 installer is distributed as a .zip file that needs to be extracted before installation',
+          'AWS only supports zip compression',
+          'unzip speeds up the installation'
+        ],
+        correct: 1,
+        exp: 'The <strong>AWS CLI v2</strong> is distributed as a zip archive (awscliv2.zip). You need unzip to extract it before running the installer. This is a common pattern for software not in the apt repos — download a compressed archive with curl/wget, extract with unzip or tar, then run the installer inside. Always check what tools you\'ll need before starting an installation.'
       }
     ]
   }
@@ -6855,6 +7990,52 @@ const FC_DECKS = [
       { q: 'What is DNS TTL and why lower it before DNS changes?', a: 'Time To Live — how long DNS is cached. Lower it first so changes propagate faster.', exp: 'High TTL (3600) = up to 1 hour for changes to propagate. Set TTL to 300 before making changes, so mistakes are fixable quickly.' },
       { q: 'Test if a specific port is reachable on a host', a: 'nc -zv hostname port', exp: '-z = scan only, -v = verbose output. nc -zv google.com 443 tests HTTPS. "succeeded" = port open, "refused" = closed.' },
       { q: 'Check routing table — how traffic gets routed', a: 'ip route show', exp: 'Shows default gateway and all routes. "default via 10.0.1.1" means all traffic goes to that gateway first.' },
+    ]
+  },
+  {
+    id: 'script',
+    name: 'Shell Scripting',
+    icon: '⚡',
+    color: '#f472b6',
+    cards: [
+      { q: 'What is the shebang line and what does it do?', a: '#!/bin/bash — first line of every script, tells OS which interpreter to use', exp: 'Must be line 1, no exceptions. Without it the script may fail or use the wrong shell. #!/bin/sh is more portable but has fewer features.' },
+      { q: 'How do you make a script executable and run it?', a: 'chmod +x script.sh then ./script.sh', exp: 'Two steps: add execute permission with chmod +x, then run with ./ prefix. Or skip chmod and run as: bash script.sh' },
+      { q: 'Correct syntax for variable assignment in bash', a: 'NAME="value" — no spaces around =', exp: 'Spaces around = are a syntax error. NAME="Frank" is correct. NAME = "Frank" fails. Use ${NAME} when combining with other text.' },
+      { q: 'What does $? return?', a: 'Exit code of the last command (0=success, non-zero=error)', exp: 'Run any command then echo $? to see if it succeeded. Use in scripts: if [ $? -ne 0 ]; then echo "Error!" fi' },
+      { q: 'How do you read user input into a variable?', a: 'read -p "Enter value: " VARNAME', exp: '-p shows a prompt on the same line. -s hides input (for passwords). Plain read waits for input after a separate echo.' },
+      { q: 'What are $1, $2, $# in a script?', a: '$1=first argument, $2=second argument, $#=total argument count', exp: 'Run ./script.sh prod v2.0 and $1="prod" $2="v2.0" $#=2. Use ${1:-"default"} to set a default if argument not provided.' },
+      { q: 'Bash if statement to check if a file exists', a: 'if [ -f /path/to/file ]; then', exp: '-f = regular file exists. -d = directory exists. -e = any file/dir exists. -r = readable. Always spaces inside [ ] brackets.' },
+      { q: 'Run a for loop over a number range 1 to 10', a: 'for i in {1..10}; do ... done', exp: 'Curly brace expansion creates the sequence. for i in {1..10} iterates 1,2,3...10. Use $i inside the loop body.' },
+      { q: 'What does break do inside a loop?', a: 'Exits the loop immediately', exp: 'break stops the loop and continues after done. continue skips the rest of the current iteration and goes to the next. Common in while loops for retry logic.' },
+      { q: 'What does $(command) do in a script?', a: 'Command substitution — runs the command and inserts its output inline', exp: 'echo "Today: $(date)" runs date and drops the output into the string. Old syntax uses backticks but $() is cleaner and nestable.' },
+      { q: 'How do you define and call a function in bash?', a: 'myfunc() { commands; } then call it by name: myfunc', exp: 'Define first, call after. Use local variables inside: local VAR="value". Functions use $1 $2 for their own arguments.' },
+      { q: 'Cron format for running a script every day at 2am', a: '0 2 * * * /full/path/to/script.sh', exp: 'minute(0) hour(2) day(*) month(*) weekday(*). Always use absolute paths in cron — no PATH is set. Add >> /log 2>&1 to capture output.' },
+      { q: 'How do you list and edit your cron jobs?', a: 'crontab -l to list, crontab -e to edit', exp: 'crontab -e opens editor with validation. crontab -l shows current jobs. crontab -r removes all jobs. sudo crontab -e edits root\'s jobs.' },
+      { q: 'What does 2>&1 mean at the end of a cron command?', a: 'Redirects stderr (error output) to the same place as stdout', exp: '2 is stderr, 1 is stdout, & before 1 means "file descriptor 1". So >> log.txt 2>&1 sends both normal and error output to the log file.' },
+      { q: 'What is the purpose of local in a bash function?', a: 'Scopes the variable to the function — prevents overwriting global variables', exp: 'Without local, all bash variables are global. local ENV="prod" inside a function doesn\'t affect $ENV outside it. Always use local for function variables.' },
+    ]
+  },
+  {
+    id: 'pkg',
+    name: 'Package Management',
+    icon: '📦',
+    color: '#00ff88',
+    cards: [
+      { q: 'Install a package without confirmation prompt', a: 'sudo apt install packagename -y', exp: '-y answers yes to all prompts automatically. Essential for scripts. sudo is required — package installation needs root privileges.' },
+      { q: 'What is the difference between apt update and apt upgrade?', a: 'update = refresh package catalog (no installs); upgrade = install available updates', exp: 'Always run update before upgrade or installing anything. update downloads package lists, upgrade actually installs newer versions.' },
+      { q: 'First commands on any new EC2 instance', a: 'sudo apt update && sudo apt upgrade -y', exp: 'Refreshes package list then installs all security updates. The && ensures upgrade only runs if update succeeded. Do this before installing anything.' },
+      { q: 'Uninstall a package and remove its config files', a: 'sudo apt purge packagename', exp: 'purge removes everything. remove keeps config files (useful if reinstalling). autoremove cleans up orphaned dependencies afterward.' },
+      { q: 'Remove packages no longer needed as dependencies', a: 'sudo apt autoremove', exp: 'Run after removing packages to clean up dependencies that are no longer needed. Safe — only removes packages nothing else depends on.' },
+      { q: 'Check if a specific package is installed', a: 'dpkg -l | grep packagename', exp: 'dpkg -l lists all packages. ii at start = installed. rc = removed but config remains. un = not installed. Fastest way to verify.' },
+      { q: 'Find which package a command belongs to', a: 'dpkg -S /path/to/command', exp: 'First find the path: which commandname. Then: dpkg -S /usr/bin/curl returns "curl: /usr/bin/curl". Tells you what to install to get a tool.' },
+      { q: 'List all files installed by a package', a: 'dpkg -L packagename', exp: 'Shows every file the package put on your system. Useful to find config file locations, binary paths, and documentation.' },
+      { q: 'Search for a package by description keyword', a: 'apt search "keyword"', exp: 'Searches package names and descriptions. Use quotes for phrases. Returns matching packages with short descriptions. Then use apt show for details.' },
+      { q: 'Get detailed info about a package before installing', a: 'apt show packagename', exp: 'Shows version, size, dependencies, description, and maintainer. Check this before installing unfamiliar packages to understand what you\'re getting.' },
+      { q: 'Clear downloaded package files to free disk space', a: 'sudo apt clean', exp: 'Deletes cached .deb files from /var/cache/apt/archives/. Can reclaim hundreds of MB. Packages can still be reinstalled — apt just downloads them again.' },
+      { q: 'What is a Snap package?', a: 'A self-contained package that bundles its own dependencies — runs consistently across Linux systems', exp: 'Snaps are larger than apt packages but include everything they need. sudo snap install packagename. Good when apt version is outdated.' },
+      { q: 'Install multiple packages at once with apt', a: 'sudo apt install pkg1 pkg2 pkg3 -y', exp: 'List all packages separated by spaces. apt resolves all dependencies at once. More efficient than installing one at a time.' },
+      { q: 'What does && do between apt update and apt upgrade?', a: 'Runs upgrade ONLY if update succeeded — prevents upgrading from a stale package list', exp: 'Command chaining: cmd1 && cmd2 means run cmd2 only if cmd1 exits with code 0 (success). If update fails (no internet), upgrade is skipped.' },
+      { q: 'How do you install the AWS CLI v2 on Ubuntu?', a: 'curl the zip, unzip it, run sudo ./aws/install', exp: 'Not in standard apt repos. Download awscliv2.zip with curl, install unzip, extract, run installer. Then verify: aws --version' },
     ]
   }
 ];
