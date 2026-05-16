@@ -6443,7 +6443,1041 @@ pkg_4: {
   `
 },
 
-pkg_quiz: { isQuiz: true, moduleId: 'pkg' }
+pkg_quiz: { isQuiz: true, moduleId: 'pkg' },
+
+// ── MODULE 9: SSH & REMOTE ACCESS ──
+
+ssh_1: {
+  title: 'How SSH Works',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You just launched an EC2 instance on AWS. There's no monitor, no keyboard, no desktop. How do you get inside?</div>
+  <div class="scenario-body">SSH (Secure Shell) is the answer. It's the protocol that lets you securely control a remote Linux server from your terminal as if you were sitting right in front of it. Every cloud engineer uses SSH every single day. Understanding how it works makes everything else in cloud engineering click.</div>
+</div>
+
+<h3>What SSH Does</h3>
+<p>SSH creates an <strong>encrypted tunnel</strong> between your computer and a remote server. Everything you type and everything the server sends back travels through that tunnel — scrambled so that even if someone intercepts the traffic, they can't read it.</p>
+
+<p>Before SSH, engineers used Telnet — which sent everything in plain text. Passwords, commands, everything. SSH replaced it in the late 1990s and has been the standard ever since.</p>
+
+<h3>The Two Authentication Methods</h3>
+<table class="cmd-table">
+  <tr><th>Method</th><th>How It Works</th><th>Security</th></tr>
+  <tr><td><code>Password</code></td><td class="cmd-desc">You type a password when connecting</td><td class="cmd-desc">Weak — vulnerable to brute force attacks</td></tr>
+  <tr><td><code>Key Pair</code></td><td class="cmd-desc">Cryptographic key files prove your identity</td><td class="cmd-desc">Strong — AWS uses this exclusively</td></tr>
+</table>
+
+<h3>How Key Pair Authentication Works</h3>
+<p>SSH key pairs use <strong>asymmetric cryptography</strong>. You generate two mathematically linked keys:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">how key pairs work</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-highlight">Private Key</span>  <span class="t-comment">← stays on YOUR computer, NEVER shared</span><br>
+    <span class="t-out">~/.ssh/id_rsa</span><br>
+    <br>
+    <span class="t-accent3">Public Key</span>   <span class="t-comment">← goes on the SERVER, safe to share</span><br>
+    <span class="t-out">~/.ssh/id_rsa.pub  →  copied to server's ~/.ssh/authorized_keys</span><br>
+    <br>
+    <span class="t-comment"># When you connect:</span><br>
+    <span class="t-comment"># 1. Server sends a random challenge</span><br>
+    <span class="t-comment"># 2. Your private key signs it mathematically</span><br>
+    <span class="t-comment"># 3. Server verifies with your public key</span><br>
+    <span class="t-comment"># 4. Match = you're in. No password needed.</span>
+  </div>
+</div>
+
+<h3>SSH Architecture on AWS</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">aws ec2 ssh flow</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Your laptop                    AWS EC2 Instance</span><br>
+    <span class="t-out">~/.ssh/my-key.pem  ──SSH──→  ubuntu@54.201.88.42</span><br>
+    <br>
+    <span class="t-comment"># Port 22 must be open in the EC2 Security Group</span><br>
+    <span class="t-comment"># The .pem file is your private key (downloaded when creating the instance)</span><br>
+    <span class="t-comment"># AWS already put your public key on the server during launch</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--red)">
+  <div class="info-box-title">🔒 The Golden Rule: Never Share Your Private Key</div>
+  Your private key (<code>~/.ssh/id_rsa</code> or any <code>.pem</code> file) is like a master password to every server it grants access to. Never email it, never commit it to Git, never paste it anywhere. If it's compromised, rotate it immediately by replacing the public key on your servers.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ls ~/.ssh/</code> — see if you have any existing SSH keys</li>
+    <li><code>cat /etc/ssh/sshd_config | grep -i "PasswordAuth\|PubkeyAuth"</code> — see your SSH server config</li>
+    <li><code>systemctl status ssh</code> — check if the SSH service is running on your WSL2</li>
+    <li>Think about this: what's the difference between your SSH client (what you use to connect OUT) and SSH server (what accepts incoming connections)?</li>
+  </ul>
+</div>
+  `
+},
+
+ssh_2: {
+  title: 'Generating SSH Key Pairs',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Before you can connect to any server with key-based auth, you need keys. Let's generate them.</div>
+  <div class="scenario-body">Generating SSH keys is a one-time setup that pays dividends forever. Once you have a key pair, you can add your public key to any server — GitHub, EC2 instances, VPS providers — and connect without typing passwords. This is how professional engineers work.</div>
+</div>
+
+<h3>Generating Your Key Pair</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ssh-keygen</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Generate an Ed25519 key pair (modern, recommended)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh-keygen -t ed25519 -C "frank@myemail.com"</span><br>
+    <span class="t-out">Generating public/private ed25519 key pair.</span><br>
+    <span class="t-out">Enter file in which to save the key (/home/frank/.ssh/id_ed25519): </span><span class="t-warn">[Enter]</span><br>
+    <span class="t-out">Enter passphrase (empty for no passphrase): </span><span class="t-warn">[Enter or type passphrase]</span><br>
+    <span class="t-out">Your identification has been saved in /home/frank/.ssh/id_ed25519</span><br>
+    <span class="t-out">Your public key has been saved in /home/frank/.ssh/id_ed25519.pub</span><br>
+    <br>
+    <span class="t-comment"># Or RSA (older, widely compatible)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh-keygen -t rsa -b 4096 -C "frank@myemail.com"</span><br>
+    <span class="t-comment"># -b 4096 = 4096 bit key length (stronger)</span>
+  </div>
+</div>
+
+<h3>What Gets Created</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">your new key files</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ls -la ~/.ssh/</span><br>
+    <span class="t-out">-rw------- 1 frank frank  419 May 15 ~/.ssh/id_ed25519</span><br>
+    <span class="t-out">-rw-r--r-- 1 frank frank  104 May 15 ~/.ssh/id_ed25519.pub</span><br>
+    <br>
+    <span class="t-comment"># Private key: 600 permissions (owner read/write only)</span><br>
+    <span class="t-comment"># Public key: 644 permissions (everyone can read)</span><br>
+    <br>
+    <span class="t-comment"># View your PUBLIC key (safe to copy and share)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat ~/.ssh/id_ed25519.pub</span><br>
+    <span class="t-out">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... frank@myemail.com</span><br>
+    <br>
+    <span class="t-comment"># Add to a server's authorized keys</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys</span><br>
+    <span class="t-comment"># This is what happens on servers when you add your key</span>
+  </div>
+</div>
+
+<h3>Adding Your Key to GitHub</h3>
+<p>GitHub uses SSH keys for authentication too — instead of typing your password every time you push code:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">adding key to github</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Copy your public key to clipboard</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat ~/.ssh/id_ed25519.pub</span><br>
+    <span class="t-comment"># Copy the entire output</span><br>
+    <br>
+    <span class="t-comment"># Then in GitHub:</span><br>
+    <span class="t-out">Settings → SSH and GPG Keys → New SSH Key → Paste → Save</span><br>
+    <br>
+    <span class="t-comment"># Test it works</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh -T git@github.com</span><br>
+    <span class="t-out">Hi FEWingate! You've successfully authenticated.</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent)">
+  <div class="info-box-title">💡 Passphrase vs No Passphrase</div>
+  Adding a passphrase to your key is like a second lock — even if someone steals your key file, they can't use it without the passphrase. For personal use on your own machine, no passphrase is convenient. For keys that access production servers, always use a passphrase. Use <code>ssh-add ~/.ssh/id_ed25519</code> to load it into the SSH agent so you only type the passphrase once per session.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ssh-keygen -t ed25519 -C "your@email.com"</code> — generate your key pair (press Enter for defaults)</li>
+    <li><code>ls -la ~/.ssh/</code> — confirm both files were created with correct permissions</li>
+    <li><code>cat ~/.ssh/id_ed25519.pub</code> — view your public key</li>
+    <li>If you have a GitHub account: add this public key in GitHub Settings → SSH Keys</li>
+    <li><code>ssh -T git@github.com</code> — test the GitHub connection</li>
+  </ul>
+</div>
+  `
+},
+
+ssh_3: {
+  title: 'Connecting to a Remote Server',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your EC2 instance is running. Time to get inside it.</div>
+  <div class="scenario-body">Connecting to a remote server via SSH is the fundamental skill of cloud engineering. Once you're in, everything you've learned in this course applies — navigation, file management, permissions, processes, everything. This is where it all comes together.</div>
+</div>
+
+<h3>The Basic SSH Command</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ssh command syntax</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Basic format</span><br>
+    <span class="t-cmd">ssh username@hostname_or_ip</span><br>
+    <br>
+    <span class="t-comment"># Connect to an EC2 Ubuntu instance</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh ubuntu@54.201.88.42</span><br>
+    <br>
+    <span class="t-comment"># Connect using a specific key file (.pem from AWS)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh -i ~/.ssh/my-ec2-key.pem ubuntu@54.201.88.42</span><br>
+    <br>
+    <span class="t-comment"># First connection — you'll see this fingerprint warning</span><br>
+    <span class="t-out">The authenticity of host '54.201.88.42' can't be established.</span><br>
+    <span class="t-out">ED25519 key fingerprint is SHA256:abc123...</span><br>
+    <span class="t-out">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span><br>
+    <span class="t-warn">yes</span><br>
+    <span class="t-out">Warning: Permanently added '54.201.88.42' to known hosts.</span><br>
+    <span class="t-out">ubuntu@ip-10-0-1-45:~$</span>  <span class="t-comment">← you're in!</span>
+  </div>
+</div>
+
+<h3>Common SSH Options</h3>
+<table class="cmd-table">
+  <tr><th>Flag</th><th>What It Does</th><th>Example</th></tr>
+  <tr><td><code>-i</code></td><td class="cmd-desc">Specify identity (key) file</td><td class="cmd-example">ssh -i ~/.ssh/key.pem ubuntu@host</td></tr>
+  <tr><td><code>-p</code></td><td class="cmd-desc">Specify port (default is 22)</td><td class="cmd-example">ssh -p 2222 user@host</td></tr>
+  <tr><td><code>-v</code></td><td class="cmd-desc">Verbose — debug connection issues</td><td class="cmd-example">ssh -v user@host</td></tr>
+  <tr><td><code>-L</code></td><td class="cmd-desc">Local port forwarding (tunnel)</td><td class="cmd-example">ssh -L 8080:localhost:80 user@host</td></tr>
+  <tr><td><code>-N</code></td><td class="cmd-desc">No command — just tunnel, no shell</td><td class="cmd-example">ssh -N -L 8080:localhost:80 user@host</td></tr>
+</table>
+
+<h3>Fixing the .pem File Permission Error</h3>
+<p>AWS .pem key files need strict permissions or SSH refuses to use them:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">fixing key permissions</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-error">WARNING: UNPROTECTED PRIVATE KEY FILE!</span><br>
+    <span class="t-error">Permissions 0644 for 'my-key.pem' are too open.</span><br>
+    <span class="t-error">It is required that your private key files are NOT accessible by others.</span><br>
+    <br>
+    <span class="t-comment"># Fix it — set to owner-read-only</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">chmod 400 ~/.ssh/my-key.pem</span><br>
+    <span class="t-comment"># 400 = owner read only. SSH is now happy.</span><br>
+    <br>
+    <span class="t-comment"># Retry the connection</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh -i ~/.ssh/my-key.pem ubuntu@54.201.88.42</span><br>
+    <span class="t-out">ubuntu@ip-10-0-1-45:~$</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ Default EC2 Usernames by OS</div>
+  AWS EC2 instances use different default usernames depending on the OS:<br>
+  <strong>Ubuntu</strong> → ubuntu<br>
+  <strong>Amazon Linux</strong> → ec2-user<br>
+  <strong>CentOS</strong> → centos<br>
+  <strong>Debian</strong> → admin<br>
+  <strong>RHEL</strong> → ec2-user<br><br>
+  Using the wrong username is one of the most common "why can't I SSH in?" mistakes.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ssh localhost</code> — SSH into your own WSL2 machine (tests your SSH client)</li>
+    <li>If it fails, install SSH server: <code>sudo apt install openssh-server -y && sudo service ssh start</code></li>
+    <li><code>ssh -v localhost</code> — verbose mode, watch the handshake process in detail</li>
+    <li><code>cat ~/.ssh/known_hosts</code> — see servers you've connected to before</li>
+    <li>Practice the full connection flow — you'll use this exact sequence on EC2</li>
+  </ul>
+</div>
+  `
+},
+
+ssh_4: {
+  title: 'SSH Config Files',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You connect to 5 different servers daily. Typing ssh -i ~/.ssh/key.pem ubuntu@54.201.88.42 every time is exhausting.</div>
+  <div class="scenario-body">The SSH config file is one of the most underused power tools in a cloud engineer's arsenal. It lets you define shortcuts for all your servers so a 50-character command becomes 3. Once you set this up, you'll wonder how you worked without it.</div>
+</div>
+
+<h3>The SSH Config File</h3>
+<p>The config file lives at <code>~/.ssh/config</code>. Each entry defines a "host alias" with all the connection parameters — key file, username, IP address, port. Then you just use the alias.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">~/.ssh/config</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Web server</span><br>
+    <span class="t-out">Host webserver</span><br>
+    <span class="t-out">    HostName 54.201.88.42</span><br>
+    <span class="t-out">    User ubuntu</span><br>
+    <span class="t-out">    IdentityFile ~/.ssh/my-ec2-key.pem</span><br>
+    <span class="t-out">    Port 22</span><br>
+    <br>
+    <span class="t-comment"># Database server</span><br>
+    <span class="t-out">Host dbserver</span><br>
+    <span class="t-out">    HostName 10.0.2.50</span><br>
+    <span class="t-out">    User ubuntu</span><br>
+    <span class="t-out">    IdentityFile ~/.ssh/db-key.pem</span><br>
+    <br>
+    <span class="t-comment"># GitHub</span><br>
+    <span class="t-out">Host github.com</span><br>
+    <span class="t-out">    HostName github.com</span><br>
+    <span class="t-out">    User git</span><br>
+    <span class="t-out">    IdentityFile ~/.ssh/id_ed25519</span><br>
+    <br>
+    <span class="t-comment"># Now connect with just:</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh webserver</span><br>
+    <span class="t-comment"># Instead of: ssh -i ~/.ssh/my-ec2-key.pem ubuntu@54.201.88.42</span>
+  </div>
+</div>
+
+<h3>Creating the Config File</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">setting up ssh config</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Create the config file</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nano ~/.ssh/config</span><br>
+    <br>
+    <span class="t-comment"># Set correct permissions (required)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">chmod 600 ~/.ssh/config</span><br>
+    <br>
+    <span class="t-comment"># Useful global settings to add at the top</span><br>
+    <span class="t-out">Host *</span><br>
+    <span class="t-out">    ServerAliveInterval 60</span><br>
+    <span class="t-out">    ServerAliveCountMax 3</span><br>
+    <span class="t-out">    AddKeysToAgent yes</span><br>
+    <span class="t-comment"># ServerAliveInterval sends keepalive packets every 60s</span><br>
+    <span class="t-comment"># Prevents SSH from timing out during long pauses</span>
+  </div>
+</div>
+
+<h3>SSH Agent — Load Keys Once Per Session</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">ssh-agent</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Start the SSH agent</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">eval "$(ssh-agent -s)"</span><br>
+    <span class="t-out">Agent pid 1234</span><br>
+    <br>
+    <span class="t-comment"># Add your key to the agent</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh-add ~/.ssh/id_ed25519</span><br>
+    <span class="t-out">Identity added: /home/frank/.ssh/id_ed25519</span><br>
+    <br>
+    <span class="t-comment"># Now SSH uses this key automatically for any connection</span><br>
+    <span class="t-comment"># If key has a passphrase, you only type it once</span><br>
+    <br>
+    <span class="t-comment"># List keys loaded in agent</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh-add -l</span>
+  </div>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>nano ~/.ssh/config</code> — create your config file</li>
+    <li>Add an entry for localhost: <code>Host local</code> / <code>HostName localhost</code> / <code>User $USER</code></li>
+    <li><code>chmod 600 ~/.ssh/config</code> — set correct permissions</li>
+    <li><code>ssh local</code> — connect using your alias instead of the full command</li>
+    <li><code>eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519</code> — load your key into the agent</li>
+  </ul>
+</div>
+  `
+},
+
+ssh_5: {
+  title: 'SCP & rsync: File Transfers',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You've written a deploy script locally. You need to get it onto the EC2 server. How do you transfer files without a GUI?</div>
+  <div class="scenario-body">SCP and rsync are the two tools for moving files between your local machine and remote servers over SSH. SCP is simple and fast for quick transfers. rsync is powerful and efficient for syncing entire directories — it only transfers what changed, making it ideal for deployments.</div>
+</div>
+
+<h3>SCP — Secure Copy</h3>
+<p>SCP transfers files over an SSH connection. Same syntax as <code>cp</code> but with remote paths using <code>user@host:/path</code> format.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">scp examples</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Upload: local → remote</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">scp deploy.sh ubuntu@54.201.88.42:/home/ubuntu/</span><br>
+    <span class="t-out">deploy.sh    100%  2KB   1.2MB/s   00:00</span><br>
+    <br>
+    <span class="t-comment"># Upload with key file</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">scp -i ~/.ssh/key.pem deploy.sh ubuntu@54.201.88.42:~/</span><br>
+    <br>
+    <span class="t-comment"># Download: remote → local</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">scp ubuntu@54.201.88.42:/var/log/app.log ~/Downloads/</span><br>
+    <br>
+    <span class="t-comment"># Upload entire directory (-r = recursive)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">scp -r ./myapp/ ubuntu@54.201.88.42:/var/www/</span><br>
+    <br>
+    <span class="t-comment"># If using SSH config alias</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">scp deploy.sh webserver:/home/ubuntu/</span>
+  </div>
+</div>
+
+<h3>rsync — Smart File Sync</h3>
+<p>rsync is what you use for real deployments. It compares source and destination, transfers only changed files, and preserves permissions. Much faster than SCP for directories with many files.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">rsync — the deployment tool</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Sync local directory to remote server</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">rsync -avz ./myapp/ ubuntu@54.201.88.42:/var/www/myapp/</span><br>
+    <span class="t-comment"># -a = archive (preserves permissions, timestamps)</span><br>
+    <span class="t-comment"># -v = verbose (shows what's being transferred)</span><br>
+    <span class="t-comment"># -z = compress during transfer</span><br>
+    <br>
+    <span class="t-comment"># With SSH key</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">rsync -avz -e "ssh -i ~/.ssh/key.pem" ./myapp/ ubuntu@host:/var/www/</span><br>
+    <br>
+    <span class="t-comment"># Dry run — see what WOULD be transferred without doing it</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">rsync -avz --dry-run ./myapp/ ubuntu@host:/var/www/</span><br>
+    <br>
+    <span class="t-comment"># Delete files on remote that no longer exist locally</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">rsync -avz --delete ./myapp/ ubuntu@host:/var/www/</span><br>
+    <span class="t-comment"># Use --delete carefully — it removes files on the server</span>
+  </div>
+</div>
+
+<table class="cmd-table">
+  <tr><th>Use SCP when</th><th>Use rsync when</th></tr>
+  <tr><td class="cmd-desc">Transferring a single file quickly</td><td class="cmd-desc">Deploying an entire application directory</td></tr>
+  <tr><td class="cmd-desc">Simple one-off transfer</td><td class="cmd-desc">You want to sync only changed files</td></tr>
+  <tr><td class="cmd-desc">Remote doesn't have rsync installed</td><td class="cmd-desc">Repeated deployments to the same server</td></tr>
+</table>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Create a test file: <code>echo "Hello from local" > ~/testfile.txt</code></li>
+    <li>SCP it to localhost: <code>scp ~/testfile.txt local:/tmp/</code> (uses your SSH config alias)</li>
+    <li>Verify it arrived: <code>cat /tmp/testfile.txt</code></li>
+    <li>Create a test directory: <code>mkdir ~/testdir && echo "file1" > ~/testdir/file1.txt</code></li>
+    <li>Rsync it: <code>rsync -avz ~/testdir/ local:/tmp/testdir/</code></li>
+    <li>Check with: <code>ls /tmp/testdir/</code></li>
+  </ul>
+</div>
+  `
+},
+
+ssh_quiz: { isQuiz: true, moduleId: 'ssh' },
+
+// ── MODULE 10: CLOUD PREP: AWS + GIT ──
+
+cloud_1: {
+  title: 'WSL2 & Linux on Windows',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You've been learning Linux inside WSL2 this whole course. But how does it actually relate to a real cloud server?</div>
+  <div class="scenario-body">WSL2 has been your training ground — and it's a genuinely close approximation of what you'll use on AWS. But there are some differences worth knowing so you're not surprised when you land on a real EC2 instance for the first time.</div>
+</div>
+
+<h3>What WSL2 Actually Is</h3>
+<p>WSL2 (Windows Subsystem for Linux 2) runs a real Linux kernel inside a lightweight virtual machine on your Windows PC. It's not emulation or simulation — it's actual Ubuntu running real Linux commands. That's why everything you've practiced works the same way on a real server.</p>
+
+<table class="cmd-table">
+  <tr><th>Feature</th><th>WSL2 Ubuntu</th><th>AWS EC2 Ubuntu</th></tr>
+  <tr><td><code>Kernel</code></td><td class="cmd-desc">Real Linux kernel</td><td class="cmd-desc">Real Linux kernel</td></tr>
+  <tr><td><code>Commands</code></td><td class="cmd-desc">Identical</td><td class="cmd-desc">Identical</td></tr>
+  <tr><td><code>Filesystem</code></td><td class="cmd-desc">Linux filesystem</td><td class="cmd-desc">Linux filesystem</td></tr>
+  <tr><td><code>Networking</code></td><td class="cmd-desc">NAT through Windows</td><td class="cmd-desc">Direct VPC networking</td></tr>
+  <tr><td><code>Access</code></td><td class="cmd-desc">Local only</td><td class="cmd-desc">SSH from anywhere</td></tr>
+  <tr><td><code>Hardware</code></td><td class="cmd-desc">Shared with Windows</td><td class="cmd-desc">Dedicated (or shared) cloud hardware</td></tr>
+</table>
+
+<h3>WSL2 Tips You Should Know</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">wsl2 power user tips</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Access Windows files from WSL2</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ls /mnt/c/Users/fwing/Downloads/</span><br>
+    <span class="t-comment"># /mnt/c = your C: drive</span><br>
+    <br>
+    <span class="t-comment"># Open Windows Explorer from current WSL2 directory</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">explorer.exe .</span><br>
+    <br>
+    <span class="t-comment"># Open VS Code from WSL2 (opens in WSL2 mode)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">code .</span><br>
+    <br>
+    <span class="t-comment"># Check WSL2 version and distros from PowerShell</span><br>
+    <span class="t-out">wsl --list --verbose</span><br>
+    <br>
+    <span class="t-comment"># Restart WSL2 from PowerShell (fixes networking issues)</span><br>
+    <span class="t-out">wsl --shutdown</span><br>
+    <br>
+    <span class="t-comment"># WSL2 IP address (changes on restart)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ip addr show eth0 | grep inet</span>
+  </div>
+</div>
+
+<h3>File Storage Best Practice</h3>
+<div class="info-box" style="--box-color:var(--yellow)">
+  <div class="info-box-title">⚠️ Store Projects in the Linux Filesystem</div>
+  Keep your Linux projects in your Linux home directory (<code>~/projects</code>) — NOT in <code>/mnt/c/</code>. Accessing Windows files from WSL2 is slow because it crosses the filesystem boundary. Projects stored in the Linux filesystem are significantly faster to compile, run, and work with. Only use <code>/mnt/c/</code> when you need to share files with Windows apps.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>ls /mnt/c/Users/</code> — see your Windows user directories from Linux</li>
+    <li><code>cp /mnt/c/Users/fwing/Downloads/index.html ~/</code> — copy a Windows file into Linux</li>
+    <li><code>explorer.exe .</code> — open current Linux directory in Windows File Explorer</li>
+    <li><code>uname -r</code> — see the actual Linux kernel version running in WSL2</li>
+    <li><code>uname -a</code> — full system info — notice it says "microsoft-standard-WSL2"</li>
+  </ul>
+</div>
+  `
+},
+
+cloud_2: {
+  title: 'AWS CLI: Setup & First Commands',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You can control AWS from the browser console. But real engineers script it — launching servers, uploading files, managing permissions, all from the terminal.</div>
+  <div class="scenario-body">The AWS CLI (Command Line Interface) lets you interact with every AWS service from your terminal. Instead of clicking through the web console, you type commands that can be automated, scripted, and version-controlled. This is how cloud engineering at scale actually works.</div>
+</div>
+
+<h3>Installing AWS CLI v2</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">aws cli v2 installation</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Download the installer</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"</span><br>
+    <br>
+    <span class="t-comment"># Install unzip if needed</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">sudo apt install unzip -y</span><br>
+    <br>
+    <span class="t-comment"># Extract and install</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">unzip awscliv2.zip && sudo ./aws/install</span><br>
+    <br>
+    <span class="t-comment"># Verify</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws --version</span><br>
+    <span class="t-out">aws-cli/2.15.0 Python/3.11.6 Linux/6.2.0</span>
+  </div>
+</div>
+
+<h3>Configuring Your Credentials</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">aws configure</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws configure</span><br>
+    <span class="t-out">AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE</span><br>
+    <span class="t-out">AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</span><br>
+    <span class="t-out">Default region name [None]: us-east-1</span><br>
+    <span class="t-out">Default output format [None]: json</span><br>
+    <br>
+    <span class="t-comment"># Credentials stored in:</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat ~/.aws/credentials</span><br>
+    <span class="t-out">[default]</span><br>
+    <span class="t-out">aws_access_key_id = AKIAIOSFODNN7EXAMPLE</span><br>
+    <span class="t-out">aws_secret_access_key = wJalrXUtnFEMI/K7MDENG...</span><br>
+    <br>
+    <span class="t-comment"># Config stored in:</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cat ~/.aws/config</span><br>
+    <span class="t-out">[default]</span><br>
+    <span class="t-out">region = us-east-1</span><br>
+    <span class="t-out">output = json</span>
+  </div>
+</div>
+
+<h3>Essential AWS CLI Commands</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">aws cli — first commands</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Verify credentials work</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws sts get-caller-identity</span><br>
+    <span class="t-out">{ "Account": "123456789012", "UserId": "AIDA...", "Arn": "arn:aws:iam::123..." }</span><br>
+    <br>
+    <span class="t-comment"># List your EC2 instances</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]' --output table</span><br>
+    <br>
+    <span class="t-comment"># List S3 buckets</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws s3 ls</span><br>
+    <br>
+    <span class="t-comment"># Upload a file to S3</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws s3 cp myfile.txt s3://my-bucket/myfile.txt</span><br>
+    <br>
+    <span class="t-comment"># Start/stop an EC2 instance</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws ec2 start-instances --instance-ids i-1234567890abcdef0</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">aws ec2 stop-instances --instance-ids i-1234567890abcdef0</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--red)">
+  <div class="info-box-title">🔒 Never Commit AWS Credentials to Git</div>
+  The <code>~/.aws/credentials</code> file contains your AWS access keys. If this file gets committed to a public GitHub repo, bots scan for it within minutes and can rack up thousands of dollars in AWS charges before you notice. Add <code>.aws/</code> to your <code>.gitignore</code> and never store credentials in your project directory.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li>Install AWS CLI v2 using the commands above</li>
+    <li><code>aws --version</code> — confirm it installed correctly</li>
+    <li>If you have AWS credentials: <code>aws configure</code> and enter your keys</li>
+    <li><code>aws sts get-caller-identity</code> — verify your credentials work</li>
+    <li><code>ls ~/.aws/</code> — see the credentials and config files that were created</li>
+  </ul>
+</div>
+  `
+},
+
+cloud_3: {
+  title: 'SSH Into an EC2 Instance',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">This is the moment everything has been building toward. You launch an EC2 instance on AWS and SSH into it from your WSL2 terminal.</div>
+  <div class="scenario-body">Every skill in this course — filesystem navigation, permissions, users, processes, networking, scripting — gets used the moment you land on a live EC2 instance. This lesson walks through the complete end-to-end flow of connecting to AWS for real.</div>
+</div>
+
+<h3>Complete EC2 SSH Workflow</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">full ec2 connection workflow</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Step 1: Download your .pem key from AWS console</span><br>
+    <span class="t-comment"># Move it to your .ssh directory</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">cp /mnt/c/Users/fwing/Downloads/my-ec2-key.pem ~/.ssh/</span><br>
+    <br>
+    <span class="t-comment"># Step 2: Fix permissions (REQUIRED)</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">chmod 400 ~/.ssh/my-ec2-key.pem</span><br>
+    <br>
+    <span class="t-comment"># Step 3: Connect</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh -i ~/.ssh/my-ec2-key.pem ubuntu@YOUR_EC2_PUBLIC_IP</span><br>
+    <span class="t-out">Welcome to Ubuntu 22.04.3 LTS</span><br>
+    <span class="t-out">ubuntu@ip-10-0-1-45:~$</span><br>
+    <br>
+    <span class="t-comment"># Step 4: First things to run on a new EC2 instance</span><br>
+    <span class="t-prompt">ubuntu@ip-10-0-1-45:~$</span> <span class="t-cmd">sudo apt update && sudo apt upgrade -y</span><br>
+    <span class="t-prompt">ubuntu@ip-10-0-1-45:~$</span> <span class="t-cmd">df -h</span><br>
+    <span class="t-prompt">ubuntu@ip-10-0-1-45:~$</span> <span class="t-cmd">free -h</span><br>
+    <span class="t-prompt">ubuntu@ip-10-0-1-45:~$</span> <span class="t-cmd">whoami</span>
+  </div>
+</div>
+
+<h3>Add to SSH Config for Easy Access</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">shortcut setup</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Add to ~/.ssh/config</span><br>
+    <span class="t-out">Host myec2</span><br>
+    <span class="t-out">    HostName 54.201.88.42</span><br>
+    <span class="t-out">    User ubuntu</span><br>
+    <span class="t-out">    IdentityFile ~/.ssh/my-ec2-key.pem</span><br>
+    <br>
+    <span class="t-comment"># Now connect with just:</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">ssh myec2</span><br>
+    <br>
+    <span class="t-comment"># Exit the server when done</span><br>
+    <span class="t-prompt">ubuntu@ip-10-0-1-45:~$</span> <span class="t-cmd">exit</span><br>
+    <span class="t-out">Connection to 54.201.88.42 closed.</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span>
+  </div>
+</div>
+
+<h3>EC2 Security Group Checklist</h3>
+<p>If SSH isn't working, the Security Group is almost always the reason:</p>
+
+<table class="cmd-table">
+  <tr><th>Check</th><th>What to Verify</th></tr>
+  <tr><td><code>Inbound Rules</code></td><td class="cmd-desc">Port 22 (SSH) allowed from your IP or 0.0.0.0/0</td></tr>
+  <tr><td><code>Key File</code></td><td class="cmd-desc">Using the correct .pem that matches the key pair selected at launch</td></tr>
+  <tr><td><code>Username</code></td><td class="cmd-desc">ubuntu for Ubuntu, ec2-user for Amazon Linux</td></tr>
+  <tr><td><code>Instance State</code></td><td class="cmd-desc">Instance is in "running" state, not stopped or pending</td></tr>
+  <tr><td><code>Public IP</code></td><td class="cmd-desc">Using the Public IP, not the Private IP</td></tr>
+</table>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now</div>
+  <ul class="practice-list">
+    <li>If you have an AWS account: launch a free-tier Ubuntu EC2 instance (t2.micro)</li>
+    <li>Download the key pair .pem file during launch</li>
+    <li>Copy it to <code>~/.ssh/</code> and set permissions: <code>chmod 400 ~/.ssh/yourkey.pem</code></li>
+    <li>Connect: <code>ssh -i ~/.ssh/yourkey.pem ubuntu@YOUR_EC2_IP</code></li>
+    <li>Run your standard first commands: <code>sudo apt update && sudo apt upgrade -y</code></li>
+    <li>Add it to your SSH config for a shortcut, then <code>exit</code></li>
+  </ul>
+</div>
+  `
+},
+
+cloud_4: {
+  title: 'Git & GitHub Workflows',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You've already been using Git to push your projects to GitHub. Now let's understand what's actually happening and build the skills for real team workflows.</div>
+  <div class="scenario-body">Git is the version control system used by virtually every software team on the planet. As a cloud engineer you'll use Git daily — pulling code to deploy, pushing infrastructure changes, collaborating on scripts. You already know the basics. This lesson fills in the important gaps.</div>
+</div>
+
+<h3>The Git Mental Model</h3>
+<p>Git tracks changes to files over time. Every time you commit, Git takes a snapshot of your project. You can always go back to any previous snapshot.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">git workflow — the full picture</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Where your changes live at each stage:</span><br>
+    <span class="t-out">Working Directory  →  Staging Area  →  Local Repo  →  GitHub</span><br>
+    <span class="t-out">  (files you edit)     (git add)       (git commit)   (git push)</span><br>
+    <br>
+    <span class="t-comment"># The daily workflow</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">git status</span><span class="t-comment">       ← what changed?</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">git add .</span><span class="t-comment">          ← stage everything</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">git commit -m "message"</span><span class="t-comment">  ← snapshot it</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">git push</span><span class="t-comment">           ← send to GitHub</span>
+  </div>
+</div>
+
+<h3>Essential Git Commands</h3>
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">git commands you need daily</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Clone a repo to your machine</span><br>
+    <span class="t-cmd">git clone https://github.com/user/repo.git</span><br>
+    <br>
+    <span class="t-comment"># Pull latest changes from GitHub</span><br>
+    <span class="t-cmd">git pull</span><br>
+    <br>
+    <span class="t-comment"># See commit history</span><br>
+    <span class="t-cmd">git log --oneline -10</span><br>
+    <br>
+    <span class="t-comment"># See what changed in a file</span><br>
+    <span class="t-cmd">git diff filename</span><br>
+    <br>
+    <span class="t-comment"># Undo changes to a file (before staging)</span><br>
+    <span class="t-cmd">git checkout -- filename</span><br>
+    <br>
+    <span class="t-comment"># Create and switch to a new branch</span><br>
+    <span class="t-cmd">git checkout -b feature/new-feature</span><br>
+    <br>
+    <span class="t-comment"># Merge a branch into main</span><br>
+    <span class="t-cmd">git checkout main && git merge feature/new-feature</span>
+  </div>
+</div>
+
+<h3>The .gitignore File</h3>
+<p>Some files should never go to GitHub — credentials, compiled files, OS junk. The <code>.gitignore</code> file tells Git to ignore them completely:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">.gitignore — what to exclude</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Create a .gitignore file in your project root</span><br>
+    <span class="t-out">.env</span><span class="t-comment">              ← environment variables / secrets</span><br>
+    <span class="t-out">.aws/</span><span class="t-comment">             ← AWS credentials</span><br>
+    <span class="t-out">*.pem</span><span class="t-comment">             ← SSH private keys</span><br>
+    <span class="t-out">node_modules/</span><span class="t-comment">      ← npm packages (install from package.json)</span><br>
+    <span class="t-out">__pycache__/</span><span class="t-comment">       ← Python compiled files</span><br>
+    <span class="t-out">.DS_Store</span><span class="t-comment">          ← macOS junk</span><br>
+    <span class="t-out">*.log</span><span class="t-comment">             ← log files</span>
+  </div>
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>cd ~/Linux-Mastery-Course</code> — navigate to your cloned repo</li>
+    <li><code>git log --oneline -5</code> — see your last 5 commits</li>
+    <li><code>git status</code> — confirm nothing is pending</li>
+    <li><code>git remote -v</code> — see where your repo pushes to</li>
+    <li>Create a <code>.gitignore</code> file in your repo with <code>*.log</code> and <code>.env</code> entries</li>
+    <li>Add, commit, and push it: the full 3-command workflow</li>
+  </ul>
+</div>
+  `
+},
+
+cloud_5: {
+  title: 'Environment Variables & .env Files',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">Your app needs a database password and an API key. Hardcoding them in your code is not an option. So where do they go?</div>
+  <div class="scenario-body">Environment variables are the professional answer. They let you separate configuration from code — credentials, URLs, settings all live outside your codebase. This is standard practice across every cloud platform, and understanding them is essential for deploying real applications.</div>
+</div>
+
+<h3>What Are Environment Variables?</h3>
+<p>Environment variables are key-value pairs available to any process running on the system. They're set in the shell environment and your apps can read them at runtime. The key advantage: they're not in your code, so they can't accidentally be committed to GitHub.</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">environment variables</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># View all environment variables</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">env</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">printenv</span><br>
+    <br>
+    <span class="t-comment"># View a specific variable</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo $HOME</span><br>
+    <span class="t-out">/home/frank</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo $PATH</span><br>
+    <span class="t-out">/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin...</span><br>
+    <br>
+    <span class="t-comment"># Set a variable for current session only</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">export DB_PASSWORD="mysecretpassword"</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo $DB_PASSWORD</span><br>
+    <span class="t-out">mysecretpassword</span><br>
+    <span class="t-comment"># Disappears when you close the terminal</span><br>
+    <br>
+    <span class="t-comment"># Make permanent — add to ~/.bashrc</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo 'export API_KEY="abc123"' >> ~/.bashrc</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">source ~/.bashrc</span><span class="t-comment">  ← reload without logging out</span>
+  </div>
+</div>
+
+<h3>The .env File Pattern</h3>
+<p>Apps commonly use a <code>.env</code> file to store all their environment variables in one place. It's never committed to Git — it lives only on the server or your local machine:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">.env file — store secrets safely</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># Create a .env file</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">nano .env</span><br>
+    <br>
+    <span class="t-comment"># Contents of .env:</span><br>
+    <span class="t-out">DB_HOST=localhost</span><br>
+    <span class="t-out">DB_PORT=5432</span><br>
+    <span class="t-out">DB_PASSWORD=supersecretpassword</span><br>
+    <span class="t-out">API_KEY=sk-abc123def456</span><br>
+    <span class="t-out">ENVIRONMENT=production</span><br>
+    <br>
+    <span class="t-comment"># Load .env variables into current shell</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">export $(cat .env | xargs)</span><br>
+    <br>
+    <span class="t-comment"># Verify</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo $DB_PASSWORD</span><br>
+    <span class="t-out">supersecretpassword</span><br>
+    <br>
+    <span class="t-comment"># ALWAYS add to .gitignore</span><br>
+    <span class="t-prompt">frank@ubuntu:~$</span> <span class="t-cmd">echo ".env" >> .gitignore</span>
+  </div>
+</div>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ On AWS EC2 — Where to Store Secrets</div>
+  For EC2 applications, environment variables can be set in multiple ways:<br>
+  <strong>~/.bashrc</strong> — user-level, available in all sessions<br>
+  <strong>/etc/environment</strong> — system-wide, all users<br>
+  <strong>systemd service files</strong> — for services managed by systemd<br>
+  <strong>AWS Secrets Manager</strong> — the professional approach for production, fetches secrets via API<br>
+  <strong>AWS Parameter Store</strong> — similar, good for config + secrets
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Practice This Now in Ubuntu</div>
+  <ul class="practice-list">
+    <li><code>env | grep HOME</code> — see your HOME environment variable</li>
+    <li><code>export MY_NAME="Frank"</code> then <code>echo $MY_NAME</code></li>
+    <li>Create a <code>~/.env</code> test file with 3 fake key=value pairs</li>
+    <li><code>export $(cat ~/.env | xargs)</code> — load them into your session</li>
+    <li>Verify with <code>echo $YOURKEY</code></li>
+    <li>Add <code>echo 'export MY_NAME="Frank"'</code> to <code>~/.bashrc</code> and <code>source ~/.bashrc</code></li>
+  </ul>
+</div>
+  `
+},
+
+cloud_6: {
+  title: 'Putting It All Together',
+  content: `
+<div class="scenario-box">
+  <div class="scenario-title">You've completed all 10 modules. Every command, every concept, every skill — let's see how they connect on a real cloud engineering task.</div>
+  <div class="scenario-body">This lesson ties the entire course together. Instead of reviewing concepts, we'll walk through a realistic cloud engineering scenario that uses skills from every module. This is what the job actually looks like.</div>
+</div>
+
+<h3>A Real Cloud Engineering Task</h3>
+<p>Scenario: Your team just got a new Ubuntu EC2 instance. You need to set it up as a web server, configure a deploy user, write a health check script, and schedule it to run automatically. Here's how it flows using everything you've learned:</p>
+
+<div class="terminal-block">
+  <div class="terminal-titlebar">
+    <div class="terminal-dot" style="background:#ff5f56"></div>
+    <div class="terminal-dot" style="background:#ffbd2e"></div>
+    <div class="terminal-dot" style="background:#27c93f"></div>
+    <div class="terminal-label">full server setup — modules 1-10 in action</div>
+  </div>
+  <div class="terminal-body">
+    <span class="t-comment"># MODULE 9: SSH in</span><br>
+    <span class="t-cmd">ssh -i ~/.ssh/key.pem ubuntu@54.201.88.42</span><br>
+    <br>
+    <span class="t-comment"># MODULE 8: Update and install packages</span><br>
+    <span class="t-cmd">sudo apt update && sudo apt upgrade -y</span><br>
+    <span class="t-cmd">sudo apt install nginx git python3 -y</span><br>
+    <br>
+    <span class="t-comment"># MODULE 3: Create a deploy user</span><br>
+    <span class="t-cmd">sudo adduser deploy</span><br>
+    <span class="t-cmd">sudo usermod -aG sudo deploy</span><br>
+    <br>
+    <span class="t-comment"># MODULE 2: Set up web directory with correct permissions</span><br>
+    <span class="t-cmd">sudo mkdir -p /var/www/myapp</span><br>
+    <span class="t-cmd">sudo chown -R deploy:www-data /var/www/myapp</span><br>
+    <span class="t-cmd">sudo chmod -R 755 /var/www/myapp</span><br>
+    <br>
+    <span class="t-comment"># MODULE 4: Edit nginx config</span><br>
+    <span class="t-cmd">sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup</span><br>
+    <span class="t-cmd">sudo nano /etc/nginx/sites-available/myapp</span><br>
+    <br>
+    <span class="t-comment"># MODULE 7: Write a health check script</span><br>
+    <span class="t-cmd">nano ~/health_check.sh</span><br>
+    <span class="t-out">#!/bin/bash</span><br>
+    <span class="t-out">LOG="/var/log/health.log"</span><br>
+    <span class="t-out">echo "=== $(date) ===" >> $LOG</span><br>
+    <span class="t-out">df -h / >> $LOG</span><br>
+    <span class="t-out">free -h >> $LOG</span><br>
+    <span class="t-out">systemctl is-active nginx >> $LOG</span><br>
+    <span class="t-cmd">chmod +x ~/health_check.sh</span><br>
+    <br>
+    <span class="t-comment"># MODULE 7: Schedule it with cron</span><br>
+    <span class="t-cmd">crontab -e</span><br>
+    <span class="t-out">*/5 * * * * /home/ubuntu/health_check.sh</span><br>
+    <br>
+    <span class="t-comment"># MODULE 5: Monitor processes</span><br>
+    <span class="t-cmd">ps aux | grep nginx</span><br>
+    <span class="t-cmd">ss -tlnp | grep :80</span><br>
+    <br>
+    <span class="t-comment"># MODULE 9: SCP deploy script to server</span><br>
+    <span class="t-comment"># (from your local machine)</span><br>
+    <span class="t-cmd">scp deploy.sh ubuntu@54.201.88.42:~/</span>
+  </div>
+</div>
+
+<h3>What You've Built Over This Course</h3>
+<table class="cmd-table">
+  <tr><th>Module</th><th>Skill</th><th>Used In Real Work</th></tr>
+  <tr><td><code>01</code></td><td class="cmd-desc">Filesystem navigation</td><td class="cmd-desc">Finding logs, configs, and app files on any server</td></tr>
+  <tr><td><code>02</code></td><td class="cmd-desc">File management & permissions</td><td class="cmd-desc">Setting up web directories, fixing 403 errors</td></tr>
+  <tr><td><code>03</code></td><td class="cmd-desc">Users & sudo</td><td class="cmd-desc">Creating service accounts, managing team access</td></tr>
+  <tr><td><code>04</code></td><td class="cmd-desc">Text editing</td><td class="cmd-desc">Editing configs, grepping logs in production</td></tr>
+  <tr><td><code>05</code></td><td class="cmd-desc">Processes & monitoring</td><td class="cmd-desc">Diagnosing slow servers, killing runaway processes</td></tr>
+  <tr><td><code>06</code></td><td class="cmd-desc">Networking</td><td class="cmd-desc">Debugging connectivity, understanding VPC/Security Groups</td></tr>
+  <tr><td><code>07</code></td><td class="cmd-desc">Shell scripting</td><td class="cmd-desc">Automating deployments, backups, health checks</td></tr>
+  <tr><td><code>08</code></td><td class="cmd-desc">Package management</td><td class="cmd-desc">Installing software on fresh servers</td></tr>
+  <tr><td><code>09</code></td><td class="cmd-desc">SSH & file transfer</td><td class="cmd-desc">Connecting to and deploying to EC2 instances</td></tr>
+  <tr><td><code>10</code></td><td class="cmd-desc">AWS CLI & Git</td><td class="cmd-desc">Automating cloud operations, version-controlled deployments</td></tr>
+</table>
+
+<div class="info-box" style="--box-color:var(--accent3)">
+  <div class="info-box-title">✅ You're Ready for the Capstone Project</div>
+  Session 6 brings everything together in a real resume-worthy project: a fully automated server setup and monitoring system deployed to AWS EC2. Every command you'll use, you've already practiced. The project is just applying them in the right order toward a real outcome.
+</div>
+
+<div class="practice-box">
+  <div class="practice-title">🟢 Final Practice Challenge</div>
+  <ul class="practice-list">
+    <li>In WSL2, write a <code>~/server_setup.sh</code> script that: creates a directory, sets permissions, writes a config file, and prints a success message</li>
+    <li>Make it executable and run it</li>
+    <li>Add a health check function that runs <code>df -h</code>, <code>free -h</code>, and <code>uptime</code></li>
+    <li>Schedule it with cron to run every minute, check the output, then remove the cron job</li>
+    <li>Push your script to GitHub — you just built something worth showing</li>
+  </ul>
+</div>
+  `
+},
+
+cloud_quiz: { isQuiz: true, moduleId: 'cloud' }
 
 };
 
@@ -7205,6 +8239,218 @@ const QUIZZES = {
         ],
         correct: 1,
         exp: 'The <strong>AWS CLI v2</strong> is distributed as a zip archive (awscliv2.zip). You need unzip to extract it before running the installer. This is a common pattern for software not in the apt repos — download a compressed archive with curl/wget, extract with unzip or tar, then run the installer inside. Always check what tools you\'ll need before starting an installation.'
+      }
+    ]
+  },
+
+  ssh: {
+    title: 'Module 09 Quiz — SSH & Remote Access',
+    questions: [
+      {
+        q: 'What is the fundamental security advantage of SSH key pairs over password authentication?',
+        opts: [
+          'Keys are shorter to type',
+          'Keys use asymmetric cryptography — the private key never leaves your machine, making brute force attacks impossible',
+          'Passwords expire but keys do not',
+          'Keys work without an internet connection'
+        ],
+        correct: 1,
+        exp: 'SSH key pairs use <strong>asymmetric cryptography</strong>. Your private key never leaves your computer — the server only stores your public key. Authentication works by the server sending a challenge, your private key signing it, and the server verifying with the public key. There\'s nothing to brute force because no secret is ever transmitted.'
+      },
+      {
+        q: 'You try to SSH into EC2 and get "UNPROTECTED PRIVATE KEY FILE" error. What is the fix?',
+        opts: [
+          'Delete and regenerate the key',
+          'chmod 400 ~/.ssh/my-key.pem — restrict the key to owner-read only',
+          'sudo ssh -i my-key.pem ubuntu@host',
+          'Add the key to your SSH agent first'
+        ],
+        correct: 1,
+        exp: '<strong>chmod 400</strong> sets the key file to owner-read only (r--------). SSH refuses to use key files that are readable by others — this is a security feature. 400 means only you can read it. 600 (rw-------) also works. This error appears whenever you download a .pem from AWS and try to use it without fixing permissions first.'
+      },
+      {
+        q: 'What command generates a modern SSH key pair?',
+        opts: [
+          'ssh-create -t ed25519 -C "email"',
+          'ssh-keygen -t ed25519 -C "email"',
+          'openssl genrsa -out key 4096',
+          'aws ec2 create-key-pair'
+        ],
+        correct: 1,
+        exp: '<strong>ssh-keygen -t ed25519 -C "your@email.com"</strong> generates a modern Ed25519 key pair. The -t flag specifies the type (ed25519 is current best practice, rsa with -b 4096 is the older alternative). The -C flag adds a comment — usually your email for identification. Keys are saved to ~/.ssh/ by default.'
+      },
+      {
+        q: 'What is the ~/.ssh/config file used for?',
+        opts: [
+          'Storing SSH server logs',
+          'Defining connection shortcuts — alias hostname, username, key file, port so you can connect with just "ssh alias"',
+          'Configuring the SSH server daemon',
+          'Listing all known hosts'
+        ],
+        correct: 1,
+        exp: 'The <strong>~/.ssh/config</strong> file stores connection profiles. Instead of typing <code>ssh -i ~/.ssh/key.pem ubuntu@54.201.88.42 -p 22</code>, you define a Host alias with all those settings and just type <code>ssh myserver</code>. Must have 600 permissions. Works for SCP and rsync too when using the alias.'
+      },
+      {
+        q: 'What is the difference between SCP and rsync?',
+        opts: [
+          'SCP is for Windows, rsync is for Linux',
+          'SCP is a simple secure copy for individual files; rsync is smarter — only transfers changed files, better for directories and deployments',
+          'rsync requires root, SCP does not',
+          'They are identical tools with different names'
+        ],
+        correct: 1,
+        exp: '<strong>SCP</strong> is simple — transfers the full file every time. Great for quick one-off copies. <strong>rsync</strong> compares source and destination, only transfers what changed. For deploying a web app with 500 files where 3 changed, rsync transfers 3 files; SCP transfers all 500. Use rsync -avz for deployments, SCP for quick individual file transfers.'
+      },
+      {
+        q: 'What does ssh-add do?',
+        opts: [
+          'Adds a new user to the SSH server',
+          'Loads a private key into the SSH agent so you only authenticate once per session',
+          'Adds your public key to a remote server',
+          'Creates a new SSH key pair'
+        ],
+        correct: 1,
+        exp: '<strong>ssh-add</strong> loads your private key into the SSH agent (a background process that holds keys in memory). If your key has a passphrase, you enter it once with ssh-add and the agent handles authentication for all subsequent SSH connections that session. Start the agent with <code>eval "$(ssh-agent -s)"</code> first.'
+      },
+      {
+        q: 'You connect to an EC2 instance for the first time and see: "The authenticity of host cannot be established." What should you do?',
+        opts: [
+          'Abort — this is a security attack',
+          'Type yes to accept and continue — this is normal on first connection, SSH saves the fingerprint to known_hosts',
+          'Regenerate your SSH keys',
+          'Check your Security Group settings'
+        ],
+        correct: 1,
+        exp: 'This prompt is <strong>completely normal</strong> on first connection to any server. SSH is asking you to verify the server\'s identity fingerprint. Type <strong>yes</strong> to accept — SSH saves it to ~/.ssh/known_hosts and won\'t ask again. If you see this on a server you\'ve connected to before, THAT\'s when to be suspicious — it could indicate a man-in-the-middle attack.'
+      },
+      {
+        q: 'What default username does AWS EC2 use for Ubuntu instances?',
+        opts: ['root', 'admin', 'ubuntu', 'ec2-user'],
+        correct: 2,
+        exp: 'AWS Ubuntu EC2 instances use <strong>ubuntu</strong> as the default SSH username. Amazon Linux uses ec2-user, CentOS uses centos, Debian uses admin, RHEL uses ec2-user. Using the wrong username is one of the most common SSH connection failures. Root login is disabled by default on all AWS instances for security.'
+      },
+      {
+        q: 'What rsync flag means "only show what WOULD be transferred without actually doing it"?',
+        opts: ['-v', '--simulate', '--dry-run', '-n'],
+        correct: 2,
+        exp: '<strong>--dry-run</strong> (or -n) runs rsync in simulation mode — it shows exactly what files would be transferred and deleted without actually doing anything. Essential before using --delete flag on a production server. Always dry-run first when you\'re not certain of the outcome.'
+      },
+      {
+        q: 'What EC2 Security Group setting is required for SSH access?',
+        opts: [
+          'Outbound port 22 open',
+          'Inbound port 22 (TCP) allowed from your IP address',
+          'All ports open to 0.0.0.0/0',
+          'VPC peering enabled'
+        ],
+        correct: 1,
+        exp: 'You need an <strong>inbound rule</strong> allowing TCP port 22 from your IP address (or 0.0.0.0/0 to allow from anywhere — less secure). Without this rule, your SSH connection is blocked by AWS before it reaches the server. Security Groups are stateful — you only need the inbound rule, not an outbound one for the response.'
+      }
+    ]
+  },
+
+  cloud: {
+    title: 'Module 10 Capstone Quiz — Cloud Prep: AWS + Git',
+    questions: [
+      {
+        q: 'How do you access your Windows C: drive from WSL2?',
+        opts: ['/windows/c/', '/mnt/c/', 'C:\\', '/home/windows/'],
+        correct: 1,
+        exp: 'Windows drives are mounted at <strong>/mnt/</strong> in WSL2. Your C: drive is at /mnt/c/. So your Downloads folder is at /mnt/c/Users/yourname/Downloads/. You can copy files between Windows and Linux: <code>cp /mnt/c/Users/frank/Downloads/file.txt ~/</code> — though for performance, store active projects in the Linux filesystem, not /mnt/c/.'
+      },
+      {
+        q: 'What is the first command to run after installing the AWS CLI?',
+        opts: ['aws start', 'aws login', 'aws configure', 'aws init'],
+        correct: 2,
+        exp: '<strong>aws configure</strong> sets up your credentials interactively — it asks for your Access Key ID, Secret Access Key, default region, and output format. Credentials are stored in ~/.aws/credentials. Verify it works with <code>aws sts get-caller-identity</code> — if it returns your account info, you\'re authenticated.'
+      },
+      {
+        q: 'What does aws sts get-caller-identity do?',
+        opts: [
+          'Creates a new IAM user',
+          'Verifies your AWS CLI credentials are working and returns your account/user info',
+          'Lists all EC2 instances',
+          'Gets your current region setting'
+        ],
+        correct: 1,
+        exp: '<strong>aws sts get-caller-identity</strong> is the "hello world" of AWS CLI — it returns your Account ID, User ID, and ARN, confirming your credentials are valid and properly configured. It\'s the first command to run after aws configure to verify everything is working before running any real AWS operations.'
+      },
+      {
+        q: 'Where does AWS CLI store your credentials and why does this matter for security?',
+        opts: [
+          'In /etc/aws — readable by all users, which is fine',
+          'In ~/.aws/credentials — must never be committed to Git as leaked keys can cause massive unauthorized AWS charges',
+          'In environment variables only — never on disk',
+          'In the AWS console — synced automatically'
+        ],
+        correct: 1,
+        exp: '<strong>~/.aws/credentials</strong> stores your AWS access keys in plain text. If this file gets committed to a public GitHub repo, automated bots find it within minutes and can launch hundreds of expensive instances. Always add .aws/ to .gitignore. Leaked AWS credentials can result in thousands of dollars in charges within hours — AWS will bill you regardless.'
+      },
+      {
+        q: 'What is the Git staging area and why does it exist?',
+        opts: [
+          'A backup copy of your files — Git creates it automatically',
+          'An intermediate step between your working directory and a commit — lets you selectively choose which changes to include in a commit',
+          'The GitHub remote server where code is stored',
+          'A temporary branch for testing changes'
+        ],
+        correct: 1,
+        exp: 'The <strong>staging area</strong> (index) is where you prepare changes before committing. <code>git add filename</code> moves changes to staging. <code>git commit</code> snapshots everything in staging. This lets you have 5 changed files but only commit 2 of them — useful for keeping commits focused and logical rather than committing everything at once.'
+      },
+      {
+        q: 'What should always be in your .gitignore file for cloud engineering projects?',
+        opts: [
+          'README.md and source code files',
+          '.env files, *.pem key files, .aws/ credentials, and node_modules/',
+          'Only large binary files',
+          '.gitignore files should be empty for security'
+        ],
+        correct: 1,
+        exp: 'Critical .gitignore entries: <strong>.env</strong> (app secrets), <strong>*.pem</strong> (SSH private keys), <strong>.aws/</strong> (AWS credentials), <strong>node_modules/</strong> (can be reinstalled). If any of these get committed to a public repo, you have a security incident. The .gitignore should be one of the first files you create in any new project.'
+      },
+      {
+        q: 'What is the difference between export MY_VAR="value" and just MY_VAR="value"?',
+        opts: [
+          'They are identical',
+          'export makes the variable available to child processes (subshells and programs); without export it only exists in the current shell',
+          'export saves to disk permanently; without export it is temporary',
+          'export requires root privileges'
+        ],
+        correct: 1,
+        exp: 'Without <strong>export</strong>, a variable is local to the current shell — child processes can\'t see it. With <strong>export</strong>, the variable is passed to any process spawned from the current shell. When you set AWS_ACCESS_KEY_ID, you need to export it so the aws CLI (a child process) can read it. Apps reading environment variables need exported variables.'
+      },
+      {
+        q: 'What does git pull do and when do you use it?',
+        opts: [
+          'Uploads your local changes to GitHub',
+          'Downloads and merges the latest changes from GitHub into your local repo — use before starting work to stay current',
+          'Creates a new branch',
+          'Removes files from staging'
+        ],
+        correct: 1,
+        exp: '<strong>git pull</strong> fetches changes from the remote (GitHub) and merges them into your current branch. Always pull before starting work on a shared repo — otherwise you might make changes based on outdated code and create merge conflicts. On a server, <code>git pull</code> is often how you deploy new code (pull the latest from the repo).'
+      },
+      {
+        q: 'uname -a on WSL2 shows "microsoft-standard-WSL2" in the output. What does this confirm?',
+        opts: [
+          'WSL2 is running a simulated Linux',
+          'WSL2 is running a real Linux kernel modified by Microsoft — commands work identically to a real server',
+          'Your Linux installation is corrupted',
+          'You need to update Windows'
+        ],
+        correct: 1,
+        exp: 'WSL2 runs a <strong>real Linux kernel</strong> — Microsoft\'s build of the Linux kernel optimized for Windows integration. The "microsoft-standard-WSL2" label in uname output just identifies the kernel build. All Linux commands, system calls, and behaviors are genuine. This is why everything you\'ve learned in WSL2 transfers directly to EC2 — it\'s the same kernel.'
+      },
+      {
+        q: 'What is the complete workflow to set up a new EC2 instance for the first time?',
+        opts: [
+          'Just start deploying your app immediately',
+          'SSH in → sudo apt update && upgrade → create users → install software → configure → deploy → monitor',
+          'Install a GUI desktop environment first',
+          'Enable root login → install everything as root'
+        ],
+        correct: 1,
+        exp: 'The professional EC2 setup workflow: <strong>SSH in</strong> (Module 9) → <strong>apt update && upgrade</strong> (Module 8) → <strong>create service users</strong> (Module 3) → <strong>set permissions</strong> (Module 2) → <strong>install software</strong> (Module 8) → <strong>edit configs</strong> (Module 4) → <strong>write monitoring scripts</strong> (Module 7) → <strong>schedule with cron</strong> (Module 7) → <strong>monitor processes</strong> (Module 5). Every module in this course feeds directly into this workflow.'
       }
     ]
   }
@@ -8036,6 +9282,52 @@ const FC_DECKS = [
       { q: 'Install multiple packages at once with apt', a: 'sudo apt install pkg1 pkg2 pkg3 -y', exp: 'List all packages separated by spaces. apt resolves all dependencies at once. More efficient than installing one at a time.' },
       { q: 'What does && do between apt update and apt upgrade?', a: 'Runs upgrade ONLY if update succeeded — prevents upgrading from a stale package list', exp: 'Command chaining: cmd1 && cmd2 means run cmd2 only if cmd1 exits with code 0 (success). If update fails (no internet), upgrade is skipped.' },
       { q: 'How do you install the AWS CLI v2 on Ubuntu?', a: 'curl the zip, unzip it, run sudo ./aws/install', exp: 'Not in standard apt repos. Download awscliv2.zip with curl, install unzip, extract, run installer. Then verify: aws --version' },
+    ]
+  },
+  {
+    id: 'ssh',
+    name: 'SSH & Remote Access',
+    icon: '🔐',
+    color: '#ffd700',
+    cards: [
+      { q: 'Connect to an EC2 instance using a .pem key file', a: 'ssh -i ~/.ssh/key.pem ubuntu@IP_ADDRESS', exp: '-i specifies the identity (key) file. ubuntu is the default user for Ubuntu EC2. Use the public IP from the AWS console.' },
+      { q: 'Generate a modern SSH key pair', a: 'ssh-keygen -t ed25519 -C "your@email.com"', exp: 'Creates two files: id_ed25519 (private — never share) and id_ed25519.pub (public — copy to servers). Accept default location.' },
+      { q: 'What permissions must a .pem key file have?', a: '400 (owner read-only): chmod 400 key.pem', exp: 'SSH refuses to use keys with too-open permissions. 400 = only owner can read. You\'ll get "UNPROTECTED PRIVATE KEY FILE" error without this.' },
+      { q: 'View your public key to copy it to a server', a: 'cat ~/.ssh/id_ed25519.pub', exp: 'The .pub file is safe to share. Copy this to GitHub Settings → SSH Keys, or append to a server\'s ~/.ssh/authorized_keys.' },
+      { q: 'Test your GitHub SSH connection', a: 'ssh -T git@github.com', exp: 'Returns "Hi username! You\'ve successfully authenticated." if your SSH key is correctly added to GitHub. Useful after adding a new key.' },
+      { q: 'Create an SSH config alias for a server', a: 'nano ~/.ssh/config with Host alias, HostName, User, IdentityFile', exp: 'After setup: ssh alias instead of ssh -i key.pem user@ip. Config must have chmod 600 ~/.ssh/config permissions.' },
+      { q: 'What permissions does ~/.ssh/config need?', a: 'chmod 600 ~/.ssh/config', exp: '600 = owner read+write only. SSH ignores config files with too-open permissions. Same principle as key files.' },
+      { q: 'Load a key into SSH agent to avoid repeated passphrase prompts', a: 'eval "$(ssh-agent -s)" then ssh-add ~/.ssh/id_ed25519', exp: 'Agent holds key in memory for the session. Enter passphrase once, agent handles auth for all connections. ssh-add -l lists loaded keys.' },
+      { q: 'Copy a file from local machine to a remote server', a: 'scp localfile.txt user@host:/remote/path/', exp: 'Secure Copy Protocol — transfers over SSH. -i for key file, -r for directories. If using SSH config alias: scp file alias:/path/' },
+      { q: 'Sync a local directory to a remote server efficiently', a: 'rsync -avz ./localdir/ user@host:/remote/dir/', exp: '-a=archive (preserve permissions) -v=verbose -z=compress. Only transfers changed files. --dry-run to preview. --delete to remove stale files.' },
+      { q: 'What does the known_hosts file store?', a: 'Fingerprints of servers you\'ve previously connected to', exp: 'Located at ~/.ssh/known_hosts. SSH saves server fingerprints on first connection. If a server\'s fingerprint changes unexpectedly, SSH warns you — could indicate a security issue.' },
+      { q: 'Debug an SSH connection that won\'t connect', a: 'ssh -v user@host — verbose mode shows each step of the handshake', exp: '-v shows the authentication attempt in detail. -vv and -vvv add more verbosity. Usually reveals whether the issue is key, username, network, or Security Group.' },
+      { q: 'What EC2 Security Group rule is required to SSH in?', a: 'Inbound rule: TCP port 22 from your IP (or 0.0.0.0/0)', exp: 'Without this inbound rule, your connection is blocked before reaching the server. Best practice: restrict to your specific IP, not 0.0.0.0/0.' },
+      { q: 'Default SSH usernames for AWS EC2 by OS', a: 'Ubuntu=ubuntu, Amazon Linux=ec2-user, CentOS=centos, Debian=admin', exp: 'Wrong username = connection refused. Check the AMI documentation if unsure. Root login is disabled by default on all AWS instances.' },
+      { q: 'Keep SSH from timing out during long pauses', a: 'Add ServerAliveInterval 60 to ~/.ssh/config Host * block', exp: 'Sends a keepalive packet every 60 seconds. ServerAliveCountMax 3 means disconnect after 3 missed keepalives. Add under Host * to apply to all connections.' },
+    ]
+  },
+  {
+    id: 'cloud',
+    name: 'Cloud Prep: AWS + Git',
+    icon: '☁️',
+    color: '#ff6b35',
+    cards: [
+      { q: 'Access your Windows Downloads folder from WSL2', a: '/mnt/c/Users/yourname/Downloads/', exp: 'WSL2 mounts Windows drives at /mnt/. C: drive = /mnt/c/. D: drive = /mnt/d/. You can copy files between Windows and Linux freely.' },
+      { q: 'Open Windows File Explorer from current WSL2 directory', a: 'explorer.exe .', exp: 'The dot means current directory. Opens File Explorer showing the Linux directory. Useful for dragging files between Linux and Windows apps.' },
+      { q: 'Install the AWS CLI v2 on Ubuntu', a: 'curl the installer zip, unzip, sudo ./aws/install, verify with aws --version', exp: 'Not in apt repos. Full: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip && unzip awscliv2.zip && sudo ./aws/install' },
+      { q: 'Configure AWS CLI with your credentials', a: 'aws configure — enter Access Key ID, Secret Key, region, output format', exp: 'Credentials stored in ~/.aws/credentials. Config in ~/.aws/config. Never commit these files to Git.' },
+      { q: 'Verify AWS CLI credentials are working', a: 'aws sts get-caller-identity', exp: 'Returns your Account ID, User ID, and ARN if credentials are valid. The "hello world" of AWS CLI. Run this after aws configure.' },
+      { q: 'List all your EC2 instances from the terminal', a: 'aws ec2 describe-instances --output table', exp: 'Returns all EC2 instances in your configured region. Add --query to filter specific fields. --output json|table|text formats the response.' },
+      { q: 'Upload a file to S3 from the terminal', a: 'aws s3 cp localfile.txt s3://bucket-name/path/', exp: 'cp works like Linux cp but with s3:// paths. aws s3 ls to list buckets. aws s3 sync for directory sync (like rsync for S3).' },
+      { q: 'What does git pull do?', a: 'Downloads and merges latest changes from GitHub into your local repo', exp: 'Always pull before starting work to avoid conflicts. On servers, git pull is often how you deploy new code — pull the latest from GitHub.' },
+      { q: 'See your last 10 commits in one line each', a: 'git log --oneline -10', exp: 'Shows commit hash and message. git log --oneline --graph shows branch history visually. Useful for understanding what changed recently.' },
+      { q: 'What files must always be in .gitignore for cloud projects?', a: '.env, *.pem, .aws/, node_modules/', exp: '.env has app secrets. *.pem are SSH keys. .aws/ has AWS credentials. Committing any of these to a public repo is a security incident.' },
+      { q: 'Set a permanent environment variable', a: 'echo \'export MY_VAR="value"\' >> ~/.bashrc then source ~/.bashrc', exp: 'Without source, you have to log out and back in. source reloads .bashrc in the current session. export makes it available to child processes.' },
+      { q: 'Load all variables from a .env file into your shell', a: 'export $(cat .env | xargs)', exp: 'Reads .env file, converts to key=value pairs, exports them all. Verify with echo $VARNAME. Add .env to .gitignore first.' },
+      { q: 'What does uname -r show on WSL2?', a: 'The Linux kernel version — confirms WSL2 runs a real Linux kernel', exp: 'uname -a shows full info including "microsoft-standard-WSL2" in the kernel name. Real Linux kernel = all Linux commands work identically to EC2.' },
+      { q: 'Start/stop an EC2 instance from the CLI', a: 'aws ec2 start-instances --instance-ids i-XXXXX / aws ec2 stop-instances --instance-ids i-XXXXX', exp: 'Get instance IDs from aws ec2 describe-instances. Stopping saves money — you only pay for running instances (storage still billed when stopped).' },
+      { q: 'What is the correct order of operations on a fresh EC2 instance?', a: 'SSH in → apt update/upgrade → create users → install software → configure → deploy → monitor with cron', exp: 'Every step uses a different module: SSH (9), packages (8), users (3), permissions (2), text editing (4), scripting (7), processes (5). The whole course in one workflow.' },
     ]
   }
 ];
